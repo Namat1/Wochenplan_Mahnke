@@ -3,7 +3,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
-from datetime import datetime, timedelta
+from datetime import datetime
 from io import BytesIO
 
 # Funktion zum Extrahieren der relevanten Daten
@@ -38,14 +38,14 @@ def extract_work_data(df):
             [(4, 5), (6, 7), (8, 9), (10, 11), (12, 13), (14, 15), (16, 17)]
         ):
             # Aktivität aus beiden Zellen auslesen
-            activity1 = df.iloc[activities_row, col1]
-            activity2 = df.iloc[activities_row, col2]
+            activity1 = str(df.iloc[activities_row, col1]).strip()
+            activity2 = str(df.iloc[activities_row, col2]).strip()
 
-            # Kombiniere beide Aktivitäten, falls sie nicht leer sind
-            activity = f"{activity1} {activity2}".strip()
+            # Kombiniere beide Aktivitäten, falls sie nicht leer oder "0" sind
+            activity = " ".join(filter(lambda x: x and x != "0", [activity1, activity2])).strip()
 
             # Prüfen, ob eine der relevanten Aktivitäten in der Kombination vorkommt
-            if any(word in str(activity) for word in relevant_words):
+            if any(word in activity for word in relevant_words):
                 weekday = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day]
                 row[weekday] = activity
 
