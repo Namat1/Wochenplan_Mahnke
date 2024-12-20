@@ -3,6 +3,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
+from datetime import datetime
 from io import BytesIO
 
 # Funktion zum Extrahieren der relevanten Daten
@@ -60,7 +61,7 @@ def create_header_with_dates(df):
     return dates
 
 # Funktion, um die Tabelle optisch aufzubereiten
-def style_excel(ws):
+def style_excel(ws, calendar_week):
     # Farben und Stil für Header und Gitterlinien
     header_fill = PatternFill(start_color="FFCCFFCC", end_color="FFCCFFCC", fill_type="solid")  # Grün für Header
     alt_row_fill = PatternFill(start_color="FFF0F0F0", end_color="FFF0F0F0", fill_type="solid")  # Grau für Zeilen
@@ -71,19 +72,18 @@ def style_excel(ws):
         bottom=Side(style="thin")
     )
 
-    # Header-Zeile fett, zentriert und farbig (nur die erste Zeile)
-    for col in ws.iter_cols(min_row=1, max_row=1, min_col=1, max_col=ws.max_column):
-        for cell in col:
-            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-            cell.font = Font(bold=True)
-            cell.fill = header_fill
-            cell.border = thin_border
+    # KW-Eintrag oberhalb der Tabelle
+    ws["A1"].value = f"Kalenderwoche: {calendar_week}"
+    ws["A1"].font = Font(bold=True)
+    ws["A1"].alignment = Alignment(horizontal="left", vertical="center")
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ws.max_column)
 
-    # Gitterlinien für die zweite Zeile (ohne Hintergrundfarbe)
+    # Header-Zeile fett, zentriert und farbig (nur die erste Zeile)
     for col in ws.iter_cols(min_row=2, max_row=2, min_col=1, max_col=ws.max_column):
         for cell in col:
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             cell.font = Font(bold=True)
+            cell.fill = header_fill
             cell.border = thin_border
 
     # Datenzeilen formatieren (abwechselnd einfärben)
@@ -121,6 +121,10 @@ if uploaded_file:
     extracted_data = extract_work_data(data)
     dates = create_header_with_dates(data)
 
+    # Kalenderwoche berechnen
+    first_date = pd.to_datetime(dates[0], format='%d.%m.%Y')
+    calendar_week = first_date.isocalendar()[1]
+
     # Flache Spaltenüberschriften erstellen
     columns = ["Nachname", "Vorname"] + [f"{weekday} ({date})" for weekday, date in zip(
         ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"], dates
@@ -134,9 +138,9 @@ if uploaded_file:
     # Daten als Excel-Datei exportieren
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht")
+        extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=1)
         ws = writer.sheets["Wochenübersicht"]
-        style_excel(ws)  # Optische Anpassungen
+        style_excel(ws, calendar_week)  # Optische Anpassungen und KW-Eintrag
     excel_data = output.getvalue()
 
     # Download-Option
