@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 from openpyxl import load_workbook
+from openpyxl.styles import Alignment, Font
 from openpyxl.utils import get_column_letter
-from openpyxl import Workbook
 from io import BytesIO
 
 # Funktion zum Extrahieren der relevanten Daten
@@ -49,15 +49,26 @@ def extract_work_data(df):
 # Funktion, um die Datumszeile zu erstellen
 def create_header_with_dates(df):
     dates = [
-        df.iloc[1, 4],  # E2
-        df.iloc[1, 6],  # G2
-        df.iloc[1, 8],  # I2
-        df.iloc[1, 10], # K2
-        df.iloc[1, 12], # M2
-        df.iloc[1, 14], # O2
-        df.iloc[1, 16], # Q2
+        pd.to_datetime(df.iloc[1, 4]).strftime('%d.%m.%Y'),  # E2
+        pd.to_datetime(df.iloc[1, 6]).strftime('%d.%m.%Y'),  # G2
+        pd.to_datetime(df.iloc[1, 8]).strftime('%d.%m.%Y'),  # I2
+        pd.to_datetime(df.iloc[1, 10]).strftime('%d.%m.%Y'), # K2
+        pd.to_datetime(df.iloc[1, 12]).strftime('%d.%m.%Y'), # M2
+        pd.to_datetime(df.iloc[1, 14]).strftime('%d.%m.%Y'), # O2
+        pd.to_datetime(df.iloc[1, 16]).strftime('%d.%m.%Y'), # Q2
     ]
     return dates
+
+# Funktion, um die Tabelle optisch aufzubereiten
+def style_excel(ws):
+    # Titel-Zeile fett und zentriert
+    for col in ws.iter_cols(min_row=1, max_row=2, min_col=1, max_col=ws.max_column):
+        for cell in col:
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            cell.font = Font(bold=True)
+
+    # Spaltenbreite anpassen
+    adjust_column_width(ws)
 
 # Funktion, um die Spaltenbreite anzupassen
 def adjust_column_width(ws):
@@ -99,7 +110,7 @@ if uploaded_file:
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht")
         ws = writer.sheets["Wochenübersicht"]
-        adjust_column_width(ws)  # Passe die Spaltenbreite an
+        style_excel(ws)  # Optische Anpassungen
     excel_data = output.getvalue()
 
     # Download-Option
