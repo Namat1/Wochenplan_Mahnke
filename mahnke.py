@@ -33,11 +33,18 @@ def extract_work_data(df):
             "Samstag": "",
         }
 
-        # Iteriere durch die Wochentage
-        for day, (activity_start_col, date_col) in enumerate(
-            [(4, 4), (6, 6), (8, 8), (10, 10), (12, 12), (14, 14), (16, 16)]
+        # Iteriere durch die Wochentage und prüfe beide Zellen (z. B. E und F für Sonntag)
+        for day, (col1, col2) in enumerate(
+            [(4, 5), (6, 7), (8, 9), (10, 11), (12, 13), (14, 15), (16, 17)]
         ):
-            activity = df.iloc[activities_row, activity_start_col]
+            # Aktivität aus beiden Zellen auslesen
+            activity1 = df.iloc[activities_row, col1]
+            activity2 = df.iloc[activities_row, col2]
+
+            # Kombiniere beide Aktivitäten, falls sie nicht leer sind
+            activity = f"{activity1} {activity2}".strip()
+
+            # Prüfen, ob eine der relevanten Aktivitäten in der Kombination vorkommt
             if any(word in str(activity) for word in relevant_words):
                 weekday = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day]
                 row[weekday] = activity
