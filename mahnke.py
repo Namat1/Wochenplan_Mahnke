@@ -16,7 +16,7 @@ def is_merged_cell_and_wide(ws, row, col, min_width=4):
                 return True
     return False
 
-# Funktion, um den Bereich von "B11" bis Nachname "Linke" zu finden
+# Funktion, um den Bereich von "B11" bis Nachname "Steckel" zu finden
 def find_range(ws, end_name, column=2):  # Spalte B = 2
     start_row = 11  # Fester Startpunkt
     end_row = None
@@ -39,9 +39,9 @@ def get_calendar_week(date_value):
     except ValueError:
         raise ValueError(f"Ungültiges Datum: {date_value}")
 
-# Extrahiere Daten zwischen B11 und einschließlich Nachname "Linke"
-def extract_range_data(ws, end_name="Linke"):
-    """Extrahiert Daten von B11 bis einschließlich der Zeile mit Nachname 'Linke'."""
+# Extrahiere Daten zwischen B11 und einschließlich Nachname "Steckel"
+def extract_range_data(ws, end_name="Steckel"):
+    """Extrahiert Daten von B11 bis einschließlich der Zeile mit Nachname 'Steckel'."""
     start_row, end_row, debug_values = find_range(ws, end_name)
     if not start_row or not end_row:
         raise ValueError(
@@ -163,9 +163,9 @@ if uploaded_file:
     wb = load_workbook(uploaded_file, data_only=True)
     ws = wb["Druck Fahrer"]
 
-    # Extrahiere Daten im Bereich von B11 bis Nachname "Linke"
+    # Extrahiere Daten im Bereich von B11 bis Nachname "Steckel"
     try:
-        extracted_data = extract_range_data(ws, end_name="Linke")
+        extracted_data = extract_range_data(ws, end_name="Steckel")
 
         # Berechne die Kalenderwoche aus dem ersten Datum (z. B. Sonntag in Spalte E2)
         first_date_cell = ws.cell(row=2, column=5).value
@@ -174,8 +174,8 @@ if uploaded_file:
         # Exportiere die Daten als Excel-Datei
         output = BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            extracted_data.to_excel(writer, index=False, sheet_name="Bereich B11 bis Linke", startrow=2)
-            styled_ws = writer.sheets["Bereich B11 bis Linke"]
+            extracted_data.to_excel(writer, index=False, sheet_name="Bereich B11 bis Steckel", startrow=2)
+            styled_ws = writer.sheets["Bereich B11 bis Steckel"]
             style_excel(styled_ws, calendar_week)
 
         st.write("Gefundene Daten:")
@@ -185,7 +185,7 @@ if uploaded_file:
         st.download_button(
             label="Download als Excel",
             data=excel_data,
-            file_name="Bereich_B11_bis_Linke.xlsx",
+            file_name="Bereich_B11_bis_Steckel.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
