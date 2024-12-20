@@ -83,11 +83,12 @@ if uploaded_file:
     extracted_data = extract_work_data(data)
     dates = create_header_with_dates(data)
 
-    # Füge die Datumszeile unter die Wochentage hinzu
-    extracted_data.columns = pd.MultiIndex.from_tuples(
-        [("Nachname", ""), ("Vorname", "")] +
-        [(weekday, date) for weekday, date in zip(["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"], dates)]
-    )
+    # Füge die Datumszeile unter die Wochentage hinzu und flache den Header
+    extracted_data.columns = ["Nachname", "Vorname"] + [
+        f"{weekday} ({date})" for weekday, date in zip(
+            ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"], dates
+        )
+    ]
 
     # Debugging: Zeige die Daten
     st.write("Inhalt von extracted_data:")
