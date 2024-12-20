@@ -54,22 +54,25 @@ st.title("Excel-Daten extrahieren und analysieren")
 uploaded_file = st.file_uploader("Bitte laden Sie eine Excel-Datei hoch", type="xlsx")
 
 if uploaded_file is not None:
-    # Verarbeiten der Datei
-    processed_data = process_excel(uploaded_file)
+    try:
+        # Verarbeiten der Datei
+        processed_data = process_excel(uploaded_file)
 
-    # Anzeigen der verarbeiteten Tabelle
-    st.write("Verarbeitete Daten:")
-    st.dataframe(processed_data)
+        # Anzeigen der verarbeiteten Tabelle
+        st.write("Verarbeitete Daten:")
+        st.dataframe(processed_data)
 
-    # Download-Link für die Ergebnisse
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-        processed_data.to_excel(writer, index=False, sheet_name="Ergebnisse")
-    output.seek(0)
+        # Download-Link für die Ergebnisse
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+            processed_data.to_excel(writer, index=False, sheet_name="Ergebnisse")
+        output.seek(0)
 
-    st.download_button(
-        label="Download der Ergebnisse als Excel",
-        data=output,
-        file_name="Ergebnisse.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+        st.download_button(
+            label="Download der Ergebnisse als Excel",
+            data=output,
+            file_name="Ergebnisse.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    except Exception as e:
+        st.error(f"Es ist ein Fehler aufgetreten: {e}")
