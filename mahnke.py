@@ -18,8 +18,8 @@ def extract_work_data(df):
 
         # Iteriere durch die Wochentage
         for day, (col1, col2, date_col) in enumerate(
-            [("E", "F", "E2"), ("G", "H", "G2"), ("I", "J", "I2"),
-             ("K", "L", "K2"), ("M", "N", "M2"), ("O", "P", "O2"), ("Q", "R", "Q2")]
+            [("E", "F", 4), ("G", "H", 6), ("I", "J", 8),
+             ("K", "L", 10), ("M", "N", 12), ("O", "P", 14), ("Q", "R", 16)]
         ):
             activity_col1 = df.iloc[index + 1, ord(col1) - 65]  # Dynamische Konvertierung
             activity_col2 = df.iloc[index + 1, ord(col2) - 65]
@@ -30,7 +30,7 @@ def extract_work_data(df):
                     "Nachname": lastname,
                     "Vorname": firstname,
                     "Wochentag": ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day],
-                    "Datum": df.iloc[1, ord(date_col[0]) - 65],  # Datum aus Zeile 2
+                    "Datum": df.iloc[1, date_col],  # Datum aus der jeweiligen Spalte (4 = E, 6 = G, ...)
                     "Tätigkeit": activity
                 })
 
@@ -38,10 +38,6 @@ def extract_work_data(df):
 
 # Funktion, um mehrzeiligen Header zu erstellen
 def create_header(dates):
-    # Prüfe, ob die Anzahl der Datumswerte korrekt ist
-    if len(dates) != 7:
-        raise ValueError(f"Erwartet 7 Datumswerte, aber {len(dates)} gefunden.")
-
     # Erster Header: Wochentage
     weekdays = ["Nachname", "Vorname"] + ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
     # Zweiter Header: Datum
@@ -59,17 +55,21 @@ if uploaded_file:
     sheet = wb["Druck Fahrer"]
     data = pd.DataFrame(sheet.values)
 
-    # Holen der Datumszeile (Zeile 2)
-    dates = data.iloc[1, 4::2]  # Datum ab Spalte "E", jeder zweite Eintrag
+    # Holen der Datumswerte aus den definierten Spalten
+    dates = [
+        data.iloc[1, 4],  # E2
+        data.iloc[1, 6],  # G2
+        data.iloc[1, 8],  # I2
+        data.iloc[1, 10], # K2
+        data.iloc[1, 12], # M2
+        data.iloc[1, 14], # O2
+        data.iloc[1, 16], # Q2
+    ]
 
     # Erstellen eines DataFrames mit mehrzeiligem Header
-    try:
-        header = create_header(dates)
-        formatted_data = data.iloc[10:, 1:]  # Daten ab Zeile 11, Spalten ab B
-        formatted_data.columns = header
-    except ValueError as e:
-        st.error(f"Fehler beim Erstellen des Headers: {e}")
-        st.stop()
+    header = create_header(dates)
+    formatted_data = data.iloc[10:, 1:]  # Daten ab Zeile 11, Spalten ab B
+    formatted_data.columns = header
 
     # Zeige die Tabelle
     st.write("Tabellenübersicht mit mehrzeiligem Header:")
