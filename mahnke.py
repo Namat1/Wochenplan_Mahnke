@@ -6,7 +6,30 @@ from openpyxl.utils import range_boundaries
 from datetime import datetime
 from io import BytesIO
 
-# Funktion zum Berechnen der Kalenderwoche
+# Funktion zum Überspringen verbundener Zellen, wenn sie breiter als 4 Spalten sind
+def is_merged_cell_and_wide(ws, row, col, min_width=4):
+    """Prüft, ob die gegebene Zelle Teil eines verbundenen Bereichs ist und breiter als `min_width`."""
+    for merged_range in ws.merged_cells.ranges:
+        min_col, min_row, max_col, max_row = range_boundaries(str(merged_range))
+        if min_row <= row <= max_row and min_col <= col <= max_col:
+            if max_col - min_col + 1 > min_width:  # Breite des Bereichs prüfen
+                return True
+    return False
+
+# Funktion, um den Bereich von "B11" bis Nachname "Kleiber" zu finden
+def find_range(ws, end_name, column=2):  # Spalte B = 2
+    start_row = 11  # Fester Startpunkt
+    end_row = None
+    debug_values = []  # Zum Anzeigen aller Werte in Spalte B
+    for row in range(start_row, ws.max_row + 1):
+        value = ws.cell(row=row, column=column).value
+        debug_values.append(value)  # Alle Werte in Spalte B sammeln
+        if value == end_name:
+            end_row = row
+            break
+    return start_row, end_row, debug_values
+
+# Funktion zur Berechnung der Kalenderwoche
 def get_calendar_week(date_value):
     """Berechnet die Kalenderwoche aus einem Datum mit oder ohne Zeit."""
     try:
@@ -15,6 +38,61 @@ def get_calendar_week(date_value):
         return date.isocalendar()[1]
     except ValueError:
         raise ValueError(f"Ungültiges Datum: {date_value}")
+
+# Extrahiere Daten zwischen B11 und Nachname "Kleiber"
+def extract_range_data(ws, end_name="Kleiber"):
+    start_row, end_row, debug_values = find_range(ws, end_name)
+    if not start_row or not end_row:
+        raise ValueError(
+            f"Bereich bis {end_name} wurde nicht gefunden. "
+            f"Gefundene Werte in Spalte B: {debug_values}"
+        )
+
+    relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
+    result = []
+
+    # Iteriere durch den Bereich und überspringe leere oder verbundene Zellen
+    for row in range(start_row, end_row + 1, 2):  # Nimm nur ungerade Zeilen für Namen
+        if is_merged_cell_and_wide(ws, row, 2):  # Überspringe verbundene Zellen, wenn sie breiter als 4 Spalten sind
+            continue
+
+        lastname = ws.cell(row=row, column=2).value  # Nachname
+        firstname = ws.cell(row=row, column=3).value  # Vorname
+
+        # Überspringe Mitarbeiter mit leerem Nachnamen
+        if not lastname or str(lastname).strip().lower() == "leer":
+            continue
+
+        activities_row = row + 1  # Aktivitäten sind eine Zeile darunter
+
+        row_data = {
+            "Nachname": lastname,
+            "Vorname": firstname,
+            "Sonntag": "",
+            "Montag": "",
+            "Dienstag": "",
+            "Mittwoch": "",
+            "Donnerstag": "",
+            "Freitag": "",
+            "Samstag": "",
+        }
+
+        # Iteriere durch die Wochentage und lese Aktivitäten aus Spalten E bis R
+        for day, (col1, col2) in enumerate(
+            [(5, 6), (7, 8), (9, 10), (11, 12), (13, 14), (15, 16), (17, 18)]
+        ):
+            activity1 = ws.cell(row=activities_row, column=col1).value
+            activity2 = ws.cell(row=activities_row, column=col2).value
+
+            # Kombiniere beide Aktivitäten, falls sie nicht leer oder "0" sind
+            activity = " ".join(filter(lambda x: x and x != "0", [str(activity1 or "").strip(), str(activity2 or "").strip()]))
+            if any(word in activity for word in relevant_words):
+                weekday = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day]
+                row_data[weekday] = activity
+
+        result.append(row_data)
+
+    return pd.DataFrame(result)
 
 # Funktion zur Formatierung der Excel-Datei
 def style_excel(ws, calendar_week):
