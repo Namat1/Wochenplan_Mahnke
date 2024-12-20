@@ -41,6 +41,7 @@ def get_calendar_week(date_value):
 
 # Extrahiere Daten zwischen B11 und einschließlich Nachname "Kleiber"
 def extract_range_data(ws, end_name="Kleiber"):
+    """Extrahiert Daten von B11 bis einschließlich der Zeile mit Nachname 'Kleiber'."""
     start_row, end_row, debug_values = find_range(ws, end_name)
     if not start_row or not end_row:
         raise ValueError(
@@ -51,8 +52,8 @@ def extract_range_data(ws, end_name="Kleiber"):
     relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
     result = []
 
-    # Iteriere durch den Bereich und überspringe leere oder verbundene Zellen
-    for row in range(start_row, end_row + 1, 2):  # Nimm nur ungerade Zeilen für Namen, einschließlich end_row
+    # Iteriere durch den Bereich, einschließlich der Zeile mit 'end_name'
+    for row in range(start_row, end_row + 1, 2):  # Inkludiere end_row
         if is_merged_cell_and_wide(ws, row, 2):  # Überspringe verbundene Zellen, wenn sie breiter als 4 Spalten sind
             continue
 
@@ -96,7 +97,7 @@ def extract_range_data(ws, end_name="Kleiber"):
 
 # Funktion zur Formatierung der Excel-Datei
 def style_excel(ws, calendar_week):
-    # Farben und Stil für Header und Gitterlinien
+    """Formatierung der Excel-Datei mit Header, Abteilung und Kalenderwoche."""
     header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")  # Hellblau für Header
     alt_row_fill = PatternFill(start_color="FFFFF0AA", end_color="FFFFF0AA", fill_type="solid")  # Hellgelb für Zeilen
     title_fill = PatternFill(start_color="FF4682B4", end_color="FF4682B4", fill_type="solid")  # Dunkelblau für KW/Abteilung
