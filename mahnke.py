@@ -81,13 +81,13 @@ def style_excel(ws, calendar_week):
 
     # KW-Eintrag oberhalb der Tabelle
     ws["A1"].value = f"Kalenderwoche: {calendar_week + 1}"  # KW + 1
-    ws["A1"].font = Font(bold=True)
+    ws["A1"].font = Font(bold=True, size=14)
     ws["A1"].alignment = Alignment(horizontal="left", vertical="center")
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ws.max_column)
 
     # Abteilung unterhalb der KW
     ws["A2"].value = "Abteilung: Fuhrpark NFC"
-    ws["A2"].font = Font(bold=True)
+    ws["A2"].font = Font(bold=True, size=12)
     ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
     ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=ws.max_column)
 
