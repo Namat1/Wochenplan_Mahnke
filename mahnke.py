@@ -30,7 +30,7 @@ def extract_work_data(df):
                     "Nachname": lastname,
                     "Vorname": firstname,
                     "Wochentag": ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day],
-                    "Datum": df.iloc[1, ord(date_col) - 65],  # Datum aus Zeile 2
+                    "Datum": df.iloc[1, ord(date_col[0]) - 65],  # Nur das erste Zeichen von date_col verwenden
                     "Tätigkeit": activity
                 })
 
