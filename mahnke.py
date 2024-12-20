@@ -21,11 +21,6 @@ def extract_work_data(df):
             [("E", "F", "E2"), ("G", "H", "G2"), ("I", "J", "I2"),
              ("K", "L", "K2"), ("M", "N", "M2"), ("O", "P", "O2"), ("Q", "R", "Q2")]
         ):
-            # Prüfen, ob Spalten vorhanden sind
-            if col1 not in df.columns or col2 not in df.columns:
-                st.error(f"Spalte {col1} oder {col2} existiert nicht im DataFrame.")
-                break
-
             activity_col1 = df.iloc[index + 1, ord(col1) - 65]  # Dynamische Konvertierung
             activity_col2 = df.iloc[index + 1, ord(col2) - 65]
             activity = f"{activity_col1} {activity_col2}".strip()
@@ -41,41 +36,39 @@ def extract_work_data(df):
 
     return pd.DataFrame(result)
 
-# Funktion zum Einlesen von Excel-Daten ohne Formeln mit dynamischem Header
-def load_excel_with_header(file, sheet_name):
-    wb = load_workbook(file, data_only=True)
-    sheet = wb[sheet_name]
-
-    # Lade die Daten aus dem Blatt
-    data = pd.DataFrame(sheet.values)
-
-    # Dynamisch Spaltennamen zuweisen
-    headers = ["A", "Nachname", "Vorname"] + [f"Column_{i}" for i in range(3, len(data.columns))]
-    data.columns = headers[:len(data.columns)]  # Passe die Header dynamisch an die Anzahl der Spalten an
-
-    return data
+# Funktion, um mehrzeiligen Header zu erstellen
+def create_header(dates):
+    # Erster Header: Wochentage
+    weekdays = ["Nachname", "Vorname"] + ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
+    # Zweiter Header: Datum
+    sub_header = ["", ""] + list(dates)
+    return pd.MultiIndex.from_arrays([weekdays, sub_header])
 
 # Streamlit App
 st.title("Übersicht der Wochenarbeit")
 uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
 
 if uploaded_file:
-    # Lade die Excel-Datei mit Header
-    df = load_excel_with_header(uploaded_file, sheet_name="Druck Fahrer")
+    # Lade die Excel-Datei
+    wb = load_workbook(uploaded_file, data_only=True)
+    sheet = wb["Druck Fahrer"]
+    data = pd.DataFrame(sheet.values)
 
-    # Zeige die Spaltennamen an
-    st.write("Spaltennamen des DataFrames:", df.columns)
+    # Holen der Datumszeile (Zeile 2)
+    dates = data.iloc[1, 4::2]  # Datum ab Spalte "E", jeder zweite Eintrag
 
-    # Extrahiere die Daten
-    data = extract_work_data(df)
+    # Erstellen eines DataFrames mit mehrzeiligem Header
+    header = create_header(dates)
+    formatted_data = data.iloc[10:, 1:]  # Daten ab Zeile 11, Spalten ab B
+    formatted_data.columns = header
 
     # Zeige die Tabelle
-    st.write("Tabellenübersicht der Wochenarbeit:")
-    st.dataframe(data)
+    st.write("Tabellenübersicht mit mehrzeiligem Header:")
+    st.dataframe(formatted_data)
 
     # Download-Option
     st.download_button(
         label="Download als Excel",
-        data=data.to_excel(index=False, engine='openpyxl'),
+        data=formatted_data.to_excel(index=False, engine="openpyxl"),
         file_name="Wochenübersicht.xlsx"
     )
