@@ -13,7 +13,7 @@ def extract_work_data(df):
     result = []
 
     row_index = 10  # Start bei Zeile 11 (Index 10)
-    while row_index <= 144:  # Bis Zeile 145 (Index 144)
+    while row_index <= 176:  # Bis Zeile 177 (Index 176)
         lastname = df.iloc[row_index, 1]  # Spalte B
         firstname = df.iloc[row_index, 2]  # Spalte C
         activities_row = row_index + 1
