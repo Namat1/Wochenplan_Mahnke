@@ -29,7 +29,8 @@ def extract_work_data(df):
 
     row_index = start_index
     while row_index <= end_index:
-        lastname = str(df.iloc[row_index, 1]).strip()  # Spalte B
+        # Nachname in Großbuchstaben und Vorname unverändert
+        lastname = str(df.iloc[row_index, 1]).strip().upper()  # Spalte B
         firstname = str(df.iloc[row_index, 2]).strip()  # Spalte C
 
         # Überspringe Zeilen, bei denen Nachname oder Vorname fehlt
