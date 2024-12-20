@@ -1,85 +1,63 @@
 import streamlit as st
 import pandas as pd
-from io import BytesIO
 
-# Funktion zur Verarbeitung der Excel-Daten
-def process_excel(file):
-    # Laden der Excel-Datei
-    xls = pd.ExcelFile(file)
-    
-    # Blatt "Druck Fahrer" laden
-    df = pd.read_excel(xls, sheet_name="Druck Fahrer", header=None)
-
-    # Spaltennamen definieren (manuell, da keine Header vorhanden sind)
-    df.columns = [f"Col{i}" for i in range(1, len(df.columns) + 1)]
-
-    # Nachnamen und Vornamen extrahieren
-    data_start_row = 10  # Start bei Zeile 11 (0-basierter Index = 10)
-    df_names = df.iloc[data_start_row:, [1, 2]].dropna()
-    df_names.columns = ["Nachname", "Vorname"]
-
-    # Nur bis zum Nachnamen "Steckel"
-    df_names = df_names[df_names["Nachname"] != "Steckel"]
-
-    # Datenbereich (Spalte E2 bis Q2)
-    date_row = df.iloc[1, 4:17]  # Zeile 2, Spalten E bis Q
-    weekdays = date_row.values.tolist()
-
-    # Wichtige Begriffe zur Suche
-    keywords = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
-
-    # Ergebnisse initialisieren
+# Funktion zum Extrahieren der relevanten Daten
+def extract_work_data(df):
+    relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
     result = []
 
-    for index, row in df_names.iterrows():
-        if index + data_start_row >= len(df):
-            break  # Abbruch, wenn die Zeile außerhalb des DataFrames liegt
-        for i, word in enumerate(keywords):
-            for date_idx, date in enumerate(weekdays):
-                if 4 + date_idx >= df.shape[1]:  # Abbruch, wenn die Spalte außerhalb des DataFrames liegt
-                    continue
-                cell_value = df.iloc[index + data_start_row, 4 + date_idx]
-                # Überspringe verbundene Zellen (NaN-Werte)
-                if pd.isna(cell_value):
-                    continue
-                if word in str(cell_value):
-                    result.append({
-                        "Nachname": row["Nachname"],
-                        "Vorname": row["Vorname"],
-                        "Datum": date,
-                        "Wochentag": date_row.index[date_idx],
-                        "Status": word
-                    })
+    # Iteriere durch die Zeilen, bis der Nachname "Steckel" erreicht wird
+    for index, row in df.iterrows():
+        lastname = row['Nachname']
+        firstname = row['Vorname']
 
-    # Ergebnis als DataFrame
-    result_df = pd.DataFrame(result)
-    return result_df
+        # Abbruchbedingung
+        if lastname == "Steckel":
+            break
+
+        # Iteriere durch die Wochentage
+        for day, (col1, col2, date_col) in enumerate(
+            [("E", "F", "E2"), ("G", "H", "G2"), ("I", "J", "I2"),
+             ("K", "L", "K2"), ("M", "N", "M2"), ("O", "P", "O2"), ("Q", "R", "Q2")]
+        ):
+            activity_col1 = row.get(col1, "")
+            activity_col2 = row.get(col2, "")
+            activity = f"{activity_col1} {activity_col2}".strip()
+
+            if any(word in activity for word in relevant_words):
+                result.append({
+                    "Nachname": lastname,
+                    "Vorname": firstname,
+                    "Wochentag": ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day],
+                    "Datum": df.loc[1, date_col],
+                    "Tätigkeit": activity
+                })
+
+    return pd.DataFrame(result)
 
 # Streamlit App
-st.title("Excel-Daten extrahieren und analysieren")
+st.title("Übersicht der Wochenarbeit")
+uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
 
-uploaded_file = st.file_uploader("Bitte laden Sie eine Excel-Datei hoch", type="xlsx")
+if uploaded_file:
+    # Lade die Excel-Datei
+    df = pd.read_excel(uploaded_file, sheet_name="Druck Fahrer", header=None)
 
-if uploaded_file is not None:
-    try:
-        # Verarbeiten der Datei
-        processed_data = process_excel(uploaded_file)
+    # Konvertiere relevante Spalten
+    df.columns = [f"{chr(65 + i)}" for i in range(len(df.columns))]
+    df["Nachname"] = df["B"]
+    df["Vorname"] = df["C"]
 
-        # Anzeigen der verarbeiteten Tabelle
-        st.write("Verarbeitete Daten:")
-        st.dataframe(processed_data)
+    # Extrahiere die Daten
+    data = extract_work_data(df)
 
-        # Download-Link für die Ergebnisse
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-            processed_data.to_excel(writer, index=False, sheet_name="Ergebnisse")
-        output.seek(0)
+    # Zeige die Tabelle
+    st.write("Tabellenübersicht der Wochenarbeit:")
+    st.dataframe(data)
 
-        st.download_button(
-            label="Download der Ergebnisse als Excel",
-            data=output,
-            file_name="Ergebnisse.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-    except Exception as e:
-        st.error(f"Es ist ein Fehler aufgetreten: {e}")
+    # Download-Option
+    st.download_button(
+        label="Download als Excel",
+        data=data.to_excel(index=False, engine='openpyxl'),
+        file_name="Wochenübersicht.xlsx"
+    )
