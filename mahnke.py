@@ -70,9 +70,9 @@ def create_header_with_dates(df):
 # Funktion, um die Tabelle optisch aufzubereiten
 def style_excel(ws, calendar_week):
     # Farben und Stil für Header und Gitterlinien
-    header_fill = PatternFill(start_color="FFB6C1", end_color="FFB6C1", fill_type="solid")  # Rosarot für Header
-    alt_row_fill = PatternFill(start_color="FFF0F0F0", end_color="FFF0F0F0", fill_type="solid")  # Grau für Zeilen
-    title_fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")  # Gelb für KW
+    header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")  # Hellblau für Header
+    alt_row_fill = PatternFill(start_color="FFFFF0AA", end_color="FFFFF0AA", fill_type="solid")  # Hellgelb für Zeilen
+    title_fill = PatternFill(start_color="FF4682B4", end_color="FF4682B4", fill_type="solid")  # Dunkelblau für KW/Abteilung
     thin_border = Border(
         left=Side(style="thin"),
         right=Side(style="thin"),
@@ -82,14 +82,14 @@ def style_excel(ws, calendar_week):
 
     # KW-Eintrag oberhalb der Tabelle
     ws["A1"].value = f"Kalenderwoche: {calendar_week + 1}"  # KW + 1
-    ws["A1"].font = Font(bold=True, size=16)
+    ws["A1"].font = Font(bold=True, size=16, color="FFFFFF")
     ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
     ws["A1"].fill = title_fill
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ws.max_column)
 
     # Abteilung unterhalb der KW
     ws["A2"].value = "Abteilung: Fuhrpark NFC"
-    ws["A2"].font = Font(bold=True, size=14)
+    ws["A2"].font = Font(bold=True, size=14, color="FFFFFF")
     ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
     ws["A2"].fill = title_fill
     ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=ws.max_column)
@@ -112,9 +112,6 @@ def style_excel(ws, calendar_week):
 
     # Spaltenbreite anpassen
     adjust_column_width(ws)
-
-    # Auto-Filter hinzufügen
-    ws.auto_filter.ref = ws.dimensions
 
     # Erste drei Zeilen fixieren
     ws.freeze_panes = "A4"
