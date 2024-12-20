@@ -7,42 +7,42 @@ def extract_work_data(df):
     relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
     result = []
 
-    # Iteriere durch die Zeilen, beginnend bei Zeile 11 (Index 10) und überspringe jede zweite Zeile
-    for index in range(10, len(df), 2):  # Start bei B11 = Index 10
-        lastname = df.iloc[index, 1]  # Spalte B = Index 1
-        firstname = df.iloc[index, 2]  # Spalte C = Index 2
+    # Iteriere durch die Namen, beginnend bei B11 und C11
+    row_index = 10  # Start bei Zeile 11 (Index 10)
+    while row_index < len(df):
+        lastname = df.iloc[row_index, 1]  # Spalte B
+        firstname = df.iloc[row_index, 2]  # Spalte C
 
-        # Abbruchbedingung
-        if lastname == "Steckel":
+        # Aktivitäten in der nächsten Zeile
+        activities_row = row_index + 1
+        if activities_row >= len(df):  # Sicherstellen, dass die Zeile existiert
             break
 
         # Iteriere durch die Wochentage
-        for day, (col1, col2, date_col) in enumerate(
-            [("E", "F", 4), ("G", "H", 6), ("I", "J", 8),
-             ("K", "L", 10), ("M", "N", 12), ("O", "P", 14), ("Q", "R", 16)]
+        for day, (activity_start_col, date_col) in enumerate(
+            [(4, 4), (6, 6), (8, 8), (10, 10), (12, 12), (14, 14), (16, 16)]
         ):
-            activity_col1 = df.iloc[index + 1, col1]
-            activity_col2 = df.iloc[index + 1, col2]
-            activity = f"{activity_col1} {activity_col2}".strip()
-
+            activity = df.iloc[activities_row, activity_start_col]
             if any(word in str(activity) for word in relevant_words):
                 result.append({
                     "Nachname": lastname,
                     "Vorname": firstname,
                     "Wochentag": ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day],
-                    "Datum": df.iloc[1, date_col],
+                    "Datum": df.iloc[1, date_col],  # Datum aus Zeile 2
                     "Tätigkeit": activity
                 })
+
+        # Springe zum nächsten Namen (zwei Zeilen weiter)
+        row_index += 2
 
     return pd.DataFrame(result)
 
 # Funktion, um mehrzeiligen Header zu erstellen
-def create_header(num_columns, dates):
+def create_header(dates):
     # Erster Header: Wochentage
     weekdays = ["Nachname", "Vorname"] + ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
-    weekdays = weekdays[:num_columns]  # Kürze auf die tatsächliche Spaltenanzahl
     # Zweiter Header: Datum
-    sub_header = ["", ""] + list(dates)[:num_columns - 2]  # Kürze auf die tatsächliche Spaltenanzahl
+    sub_header = ["", ""] + list(dates)
 
     return pd.MultiIndex.from_arrays([weekdays, sub_header])
 
@@ -67,21 +67,17 @@ if uploaded_file:
         data.iloc[1, 16], # Q2
     ]
 
-    # Überprüfen der tatsächlichen Spaltenanzahl
-    num_columns = len(data.columns) - 1  # Ab Spalte B
-    header = create_header(num_columns, dates)
-
-    # Daten formatieren
-    formatted_data = data.iloc[10:, 1:]  # Daten ab Zeile 11, Spalten ab B
-    formatted_data.columns = header
+    # Erstellen eines DataFrames mit mehrzeiligem Header
+    header = create_header(dates)
+    extracted_data = extract_work_data(data)
 
     # Zeige die Tabelle
-    st.write("Tabellenübersicht mit mehrzeiligem Header:")
-    st.dataframe(formatted_data)
+    st.write("Tabellenübersicht:")
+    st.dataframe(extracted_data)
 
     # Download-Option
     st.download_button(
         label="Download als Excel",
-        data=formatted_data.to_excel(index=False, engine="openpyxl"),
+        data=extracted_data.to_excel(index=False, engine="openpyxl"),
         file_name="Wochenübersicht.xlsx"
     )
