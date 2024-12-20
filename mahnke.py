@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from openpyxl import load_workbook
 
 # Funktion zum Extrahieren der relevanten Daten
 def extract_work_data(df):
@@ -8,8 +9,8 @@ def extract_work_data(df):
 
     # Iteriere durch die Zeilen, bis der Nachname "Steckel" erreicht wird
     for index, row in df.iterrows():
-        lastname = row['Nachname']
-        firstname = row['Vorname']
+        lastname = row["Nachname"]
+        firstname = row["Vorname"]
 
         # Abbruchbedingung
         if lastname == "Steckel":
@@ -35,16 +36,29 @@ def extract_work_data(df):
 
     return pd.DataFrame(result)
 
+# Funktion zum Einlesen von Excel-Daten ohne Formeln
+def load_excel_without_formulas(file, sheet_name):
+    wb = load_workbook(file, data_only=True)
+    sheet = wb[sheet_name]
+
+    # Lade die Daten aus dem Blatt in ein DataFrame
+    data = pd.DataFrame(sheet.values)
+
+    # Die erste Zeile als Spaltennamen setzen
+    data.columns = data.iloc[0]
+    data = data[1:]
+
+    return data
+
 # Streamlit App
 st.title("Übersicht der Wochenarbeit")
 uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
 
 if uploaded_file:
-    # Lade die Excel-Datei
-    df = pd.read_excel(uploaded_file, sheet_name="Druck Fahrer", header=None)
+    # Lade die Excel-Datei ohne Formeln
+    df = load_excel_without_formulas(uploaded_file, sheet_name="Druck Fahrer")
 
-    # Konvertiere relevante Spalten
-    df.columns = [f"{chr(65 + i)}" for i in range(len(df.columns))]
+    # Relevante Spalten umbenennen
     df["Nachname"] = df["B"]
     df["Vorname"] = df["C"]
 
