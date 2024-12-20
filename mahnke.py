@@ -36,7 +36,7 @@ def extract_work_data(df):
 
     return pd.DataFrame(result)
 
-# Funktion zum Einlesen von Excel-Daten ohne Formeln mit festem Header
+# Funktion zum Einlesen von Excel-Daten ohne Formeln mit dynamischem Header
 def load_excel_with_header(file, sheet_name):
     wb = load_workbook(file, data_only=True)
     sheet = wb[sheet_name]
@@ -44,9 +44,9 @@ def load_excel_with_header(file, sheet_name):
     # Lade die Daten aus dem Blatt
     data = pd.DataFrame(sheet.values)
 
-    # Spaltennamen hinzufügen (Header)
-    headers = ["A", "Nachname", "Vorname", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R"]
-    data.columns = headers[:len(data.columns)]
+    # Dynamisch Spaltennamen zuweisen
+    headers = ["A", "Nachname", "Vorname"] + [f"Column_{i}" for i in range(3, len(data.columns))]
+    data.columns = headers[:len(data.columns)]  # Passe die Header dynamisch an die Anzahl der Spalten an
 
     return data
 
