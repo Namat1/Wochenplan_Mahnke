@@ -15,41 +15,43 @@ def is_merged_cell_and_wide(ws, row, col, min_width=4):
                 return True
     return False
 
-# Funktion, um den Bereich von "Adler" bis "Kleiber" zu finden
-def find_range(ws, start_name, end_name, column=2):  # Spalte B = 2
-    start_row = None
+# Funktion, um den Bereich von "B11" bis Nachname "Kleiber" zu finden
+def find_range(ws, end_name, column=2):  # Spalte B = 2
+    start_row = 11  # Fester Startpunkt
     end_row = None
     debug_values = []  # Zum Anzeigen aller Werte in Spalte B
-    for row in range(1, ws.max_row + 1):
+    for row in range(start_row, ws.max_row + 1):
         value = ws.cell(row=row, column=column).value
         debug_values.append(value)  # Alle Werte in Spalte B sammeln
-        if value == start_name:
-            start_row = row
         if value == end_name:
             end_row = row
-        if start_row and end_row:
             break
     return start_row, end_row, debug_values
 
-# Extrahiere Daten zwischen "Adler" und "Kleiber"
-def extract_range_data(ws, start_name="Adler", end_name="Kleiber"):
-    start_row, end_row, debug_values = find_range(ws, start_name, end_name)
+# Extrahiere Daten zwischen B11 und Nachname "Kleiber"
+def extract_range_data(ws, end_name="Kleiber"):
+    start_row, end_row, debug_values = find_range(ws, end_name)
     if not start_row or not end_row:
         raise ValueError(
-            f"Bereich zwischen {start_name} und {end_name} wurde nicht gefunden. "
+            f"Bereich bis {end_name} wurde nicht gefunden. "
             f"Gefundene Werte in Spalte B: {debug_values}"
         )
 
     relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
     result = []
 
-    # Iteriere durch den Bereich und überspringe verbundene Zellen
+    # Iteriere durch den Bereich und überspringe leere oder verbundene Zellen
     for row in range(start_row, end_row + 1, 2):  # Nimm nur ungerade Zeilen für Namen
         if is_merged_cell_and_wide(ws, row, 2):  # Überspringe verbundene Zellen, wenn sie breiter als 4 Spalten sind
             continue
 
         lastname = ws.cell(row=row, column=2).value  # Nachname
         firstname = ws.cell(row=row, column=3).value  # Vorname
+
+        # Überspringe Mitarbeiter mit leerem Nachnamen
+        if not lastname or str(lastname).strip().lower() == "leer":
+            continue
+
         activities_row = row + 1  # Aktivitäten sind eine Zeile darunter
 
         row_data = {
@@ -90,22 +92,22 @@ if uploaded_file:
     wb = load_workbook(uploaded_file, data_only=True)
     ws = wb["Druck Fahrer"]
 
-    # Extrahiere Daten im Bereich von "Adler" bis "Kleiber"
+    # Extrahiere Daten im Bereich von B11 bis Nachname "Kleiber"
     try:
-        extracted_data = extract_range_data(ws, start_name="Adler", end_name="Kleiber")
+        extracted_data = extract_range_data(ws, end_name="Kleiber")
         st.write("Gefundene Daten:")
         st.dataframe(extracted_data)
 
         # Exportiere die Daten als Excel-Datei
         output = BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            extracted_data.to_excel(writer, index=False, sheet_name="Bereich Adler bis Kleiber")
+            extracted_data.to_excel(writer, index=False, sheet_name="Bereich B11 bis Kleiber")
         excel_data = output.getvalue()
 
         st.download_button(
             label="Download als Excel",
             data=excel_data,
-            file_name="Bereich_Adler_bis_Kleiber.xlsx",
+            file_name="Bereich_B11_bis_Kleiber.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
