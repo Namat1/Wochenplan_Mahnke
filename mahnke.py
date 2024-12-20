@@ -3,8 +3,6 @@ import pandas as pd
 from io import BytesIO
 import openpyxl
 from openpyxl import load_workbook
-from openpyxl.utils import get_column_letter
-from openpyxl.worksheet.datavalidation import DataValidation
 
 def filter_excel_data(file):
     # Load the Excel file
@@ -36,14 +34,34 @@ def filter_excel_data(file):
     for row in sheet.iter_rows(min_row=1, max_row=end_row):
         for cell in row:
             new_cell = filtered_sheet.cell(row=cell.row, column=cell.column, value=cell.value)
-            # Copy cell styles if they exist
-            if cell.has_style:
-                new_cell.font = cell.font
+            # Copy styles explicitly
+            if cell.font:
+                new_cell.font = openpyxl.styles.Font(
+                    name=cell.font.name,
+                    size=cell.font.size,
+                    bold=cell.font.bold,
+                    italic=cell.font.italic,
+                    underline=cell.font.underline,
+                    strike=cell.font.strike,
+                    color=cell.font.color
+                )
+            if cell.border:
                 new_cell.border = cell.border
+            if cell.fill:
                 new_cell.fill = cell.fill
+            if cell.number_format:
                 new_cell.number_format = cell.number_format
+            if cell.protection:
                 new_cell.protection = cell.protection
-                new_cell.alignment = cell.alignment
+            if cell.alignment:
+                new_cell.alignment = openpyxl.styles.Alignment(
+                    horizontal=cell.alignment.horizontal,
+                    vertical=cell.alignment.vertical,
+                    text_rotation=cell.alignment.text_rotation,
+                    wrap_text=cell.alignment.wrap_text,
+                    shrink_to_fit=cell.alignment.shrink_to_fit,
+                    indent=cell.alignment.indent
+                )
 
     return filtered_workbook
 
