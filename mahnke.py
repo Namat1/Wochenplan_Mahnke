@@ -1,83 +1,70 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
+import openpyxl
 from io import BytesIO
 
-# Streamlit app definition
-st.title("Mahnke Wochenbericht")
+# Hauptfunktion für die Bearbeitung
+def bearbeiten_und_speichern(uploaded_file):
+    # Lade die Excel-Datei
+    wb = openpyxl.load_workbook(uploaded_file)
+    src_sheet = wb["Druck Fahrer"]
 
-# File upload section
-uploaded_file = st.file_uploader("Upload your Excel file", type=["xlsx", "csv"])
+    # Neues Workbook und Arbeitsblatt erstellen
+    new_wb = openpyxl.Workbook()
+    dest_sheet = new_wb.active
+    dest_sheet.title = "Bearbeitet"
+
+    # Inhalte vom Quellblatt kopieren
+    for row in src_sheet.iter_rows(values_only=True):
+        dest_sheet.append(row)
+
+    # Bereich für die Bearbeitung definieren
+    keep_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A.", "n. A"]
+    namen = ["Richter", "Carstensen", "Gebauer", "Pham Manh", "Ohlenroth"]
+    namen1 = ["Clemens", "Martin", "Ronny", "Chris", "Nadja"]
+
+    # Inhalte löschen, die nicht in der Keep-List sind
+    for row in dest_sheet.iter_rows(min_row=11, max_row=270, min_col=5, max_col=18):
+        for cell in row:
+            if cell.value and all(word not in str(cell.value) for word in keep_words):
+                cell.value = None
+
+    # Zusätzliche Bearbeitungen (z. B. Einfügen der Namen)
+    for i in range(5):
+        dest_sheet.insert_rows(11)
+        dest_sheet["B11"] = namen[i] if i < len(namen) else ""
+        dest_sheet["C11"] = namen1[i] if i < len(namen1) else ""
+
+    # Tour-Wörter aus Spalte D entfernen
+    for cell in dest_sheet["D"]:
+        if cell.value and "Tour" in str(cell.value):
+            cell.value = str(cell.value).replace("Tour", "")
+
+    # Lösche Zeilen unterhalb der Zeile mit 715 in Spalte A
+    for row in dest_sheet.iter_rows(min_col=1, max_col=1):
+        for cell in row:
+            if cell.value == 715:
+                dest_sheet.delete_rows(cell.row + 1, dest_sheet.max_row - cell.row)
+                break
+
+    # Ergebnis speichern
+    output = BytesIO()
+    new_wb.save(output)
+    output.seek(0)
+    return output
+
+# Streamlit App
+st.title("Excel-Bearbeitungs-App")
+
+uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch (mit einem Arbeitsblatt 'Druck Fahrer')", type="xlsx")
 
 if uploaded_file:
-    try:
-        if uploaded_file.name.endswith(".xlsx"):
-            data = pd.read_excel(uploaded_file)
-        elif uploaded_file.name.endswith(".csv"):
-            data = pd.read_csv(uploaded_file)
-    except Exception as e:
-        st.error(f"Error reading file: {e}")
-        st.stop()
-else:
-    st.info("Please upload an Excel or CSV file to proceed.")
-    st.stop()
-
-st.write("Original Data:", data)
-
-# Retainable words and names
-keep_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A.", "n. A"]
-namen = ["Richter", "Carstensen", "Gebauer", "Pham Manh", "Ohlenroth"]
-namen1 = ["Clemens", "Martin", "Ronny", "Chris", "Nadja"]
-
-# Filter data based on keep words
-def filter_data(data):
-    for col in data.columns[4:18]:  # Columns E to R
-        data[col] = data[col].apply(
-            lambda x: x if any(word in str(x) for word in keep_words) else ""
+    st.success("Datei erfolgreich hochgeladen!")
+    if st.button("Bearbeiten und Speichern"):
+        output_file = bearbeiten_und_speichern(uploaded_file)
+        st.download_button(
+            label="Bearbeitetes Excel herunterladen",
+            data=output_file,
+            file_name="Bearbeitet.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-    return data
-
-filtered_data = filter_data(data.copy())
-st.write("Filtered Data:", filtered_data)
-
-# Insert names and process additional logic
-def additional_processing(data):
-    # Dynamische Anzahl der Spalten bestimmen
-    num_columns = len(data.columns)
-    empty_row = [""] * num_columns
-
-    # Duplicate rows und Namen einfügen
-    for i in range(5):
-        data.loc[len(data)] = empty_row  # Leere Zeile hinzufügen
-        if i < len(namen):
-            data.iloc[-1, 1] = namen[i]  # Namen in Spalte B einfügen
-        if i < len(namen1):
-            data.iloc[-1, 2] = namen1[i]  # Namen in Spalte C einfügen
-
-    # Zeilen 5 bis 10 löschen
-    data = data.drop(index=range(5, 11), errors="ignore")
-
-    # Wort "Tour" aus Spalte D entfernen
-    if "D" in data.columns:
-        data["D"] = data["D"].astype(str).str.replace("Tour", "", regex=False)
-
-    return data
-
-processed_data = additional_processing(filtered_data.copy())
-st.write("Processed Data:", processed_data)
-
-# Save to a new Excel file and offer for download
-def convert_df_to_excel(data):
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        data.to_excel(writer, index=False, sheet_name="Processed Data")
-    processed_file = output.getvalue()
-    return processed_file
-
-excel_data = convert_df_to_excel(processed_data)
-st.download_button(
-    label="Download Processed Report as Excel",
-    data=excel_data,
-    file_name="processed_report.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
