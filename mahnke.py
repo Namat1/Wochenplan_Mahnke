@@ -39,7 +39,7 @@ def get_calendar_week(date_value):
     except ValueError:
         raise ValueError(f"Ungültiges Datum: {date_value}")
 
-# Extrahiere Daten zwischen B11 und Nachname "Kleiber"
+# Extrahiere Daten zwischen B11 und einschließlich Nachname "Kleiber"
 def extract_range_data(ws, end_name="Kleiber"):
     start_row, end_row, debug_values = find_range(ws, end_name)
     if not start_row or not end_row:
@@ -52,7 +52,7 @@ def extract_range_data(ws, end_name="Kleiber"):
     result = []
 
     # Iteriere durch den Bereich und überspringe leere oder verbundene Zellen
-    for row in range(start_row, end_row + 1, 2):  # Nimm nur ungerade Zeilen für Namen
+    for row in range(start_row, end_row + 1, 2):  # Nimm nur ungerade Zeilen für Namen, einschließlich end_row
         if is_merged_cell_and_wide(ws, row, 2):  # Überspringe verbundene Zellen, wenn sie breiter als 4 Spalten sind
             continue
 
