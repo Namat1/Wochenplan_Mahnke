@@ -1,92 +1,75 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
-import openpyxl
-from openpyxl import load_workbook
 
-def filter_excel_data(file):
-    # Load the Excel file
-    workbook = load_workbook(file, data_only=True)
-    if "Druck Fahrer" not in workbook.sheetnames:
-        st.error("Das Blatt 'Druck Fahrer' wurde nicht gefunden.")
-        return None
+# Funktion zur Verarbeitung der Excel-Daten
+def process_excel(file):
+    # Laden der Excel-Datei
+    xls = pd.ExcelFile(file)
+    
+    # Blatt "Druck Fahrer" laden
+    df = pd.read_excel(xls, sheet_name="Druck Fahrer", header=None)
 
-    sheet = workbook["Druck Fahrer"]
+    # Spaltennamen definieren (manuell, da keine Header vorhanden sind)
+    df.columns = [f"Col{i}" for i in range(1, len(df.columns) + 1)]
 
-    # Find the row where "Aushilfsfahrer" is present
-    end_row = None
-    for row in sheet.iter_rows(min_row=1, max_col=1, max_row=sheet.max_row):
-        for cell in row:
-            if cell.value == "Aushilfsfahrer":
-                end_row = cell.row - 1
-                break
-        if end_row:
-            break
+    # Nachnamen und Vornamen extrahieren
+    data_start_row = 10  # Start bei Zeile 11 (0-basierter Index = 10)
+    df_names = df.iloc[data_start_row:, [1, 2]].dropna()
+    df_names.columns = ["Nachname", "Vorname"]
 
-    if not end_row:
-        end_row = sheet.max_row
+    # Nur bis zum Nachnamen "Steckel"
+    df_names = df_names[df_names["Nachname"] != "Steckel"]
 
-    # Create a new workbook for the filtered data
-    filtered_workbook = openpyxl.Workbook()
-    filtered_sheet = filtered_workbook.active
-    filtered_sheet.title = "Gefilterte Daten"
+    # Datenbereich (Spalte E2 bis Q2)
+    date_row = df.iloc[1, 4:17]  # Zeile 2, Spalten E bis Q
+    weekdays = date_row.values.tolist()
 
-    for row in sheet.iter_rows(min_row=1, max_row=end_row):
-        for cell in row:
-            new_cell = filtered_sheet.cell(row=cell.row, column=cell.column, value=cell.value)
-            # Copy styles explicitly
-            if cell.font:
-                new_cell.font = openpyxl.styles.Font(
-                    name=cell.font.name,
-                    size=cell.font.size,
-                    bold=cell.font.bold,
-                    italic=cell.font.italic,
-                    underline=cell.font.underline,
-                    strike=cell.font.strike,
-                    color=cell.font.color
-                )
-            if cell.border:
-                new_cell.border = cell.border
-            if cell.fill:
-                new_cell.fill = cell.fill
-            if cell.number_format:
-                new_cell.number_format = cell.number_format
-            if cell.protection:
-                new_cell.protection = cell.protection
-            if cell.alignment:
-                new_cell.alignment = openpyxl.styles.Alignment(
-                    horizontal=cell.alignment.horizontal,
-                    vertical=cell.alignment.vertical,
-                    text_rotation=cell.alignment.text_rotation,
-                    wrap_text=cell.alignment.wrap_text,
-                    shrink_to_fit=cell.alignment.shrink_to_fit,
-                    indent=cell.alignment.indent
-                )
+    # Wichtige Begriffe zur Suche
+    keywords = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
 
-    return filtered_workbook
+    # Ergebnisse initialisieren
+    result = []
 
-def to_bytes(workbook):
+    for index, row in df_names.iterrows():
+        for i, word in enumerate(keywords):
+            for date_idx, date in enumerate(weekdays):
+                cell_value = df.iloc[index + data_start_row, 4 + date_idx]  # Entsprechende Zellen prüfen
+                if pd.notna(cell_value) and word in str(cell_value):
+                    result.append({
+                        "Nachname": row["Nachname"],
+                        "Vorname": row["Vorname"],
+                        "Datum": date,
+                        "Wochentag": date_row.index[date_idx],
+                        "Status": word
+                    })
+
+    # Ergebnis als DataFrame
+    result_df = pd.DataFrame(result)
+    return result_df
+
+# Streamlit App
+st.title("Excel-Daten extrahieren und analysieren")
+
+uploaded_file = st.file_uploader("Bitte laden Sie eine Excel-Datei hoch", type="xlsx")
+
+if uploaded_file is not None:
+    # Verarbeiten der Datei
+    processed_data = process_excel(uploaded_file)
+
+    # Anzeigen der verarbeiteten Tabelle
+    st.write("Verarbeitete Daten:")
+    st.dataframe(processed_data)
+
+    # Download-Link für die Ergebnisse
     output = BytesIO()
-    workbook.save(output)
-    processed_data = output.getvalue()
-    return processed_data
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        processed_data.to_excel(writer, index=False, sheet_name="Ergebnisse")
+    output.seek(0)
 
-# Streamlit app
-st.title("Excel Datenfilter und Download")
-
-uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
-
-if uploaded_file:
-    with st.spinner("Daten werden verarbeitet..."):
-        filtered_workbook = filter_excel_data(uploaded_file)
-
-    if filtered_workbook:
-        st.success("Daten wurden erfolgreich gefiltert.")
-
-        excel_data = to_bytes(filtered_workbook)
-        st.download_button(
-            label="Gefilterte Excel-Datei herunterladen",
-            data=excel_data,
-            file_name="gefilterte_daten.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+    st.download_button(
+        label="Download der Ergebnisse als Excel",
+        data=output,
+        file_name="Ergebnisse.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
