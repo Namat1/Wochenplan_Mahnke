@@ -15,9 +15,6 @@ def extract_work_data(df):
     # Bereinige Spalte B (zweite Spalte) von Leerzeichen und setze alles in Kleinbuchstaben
     df.iloc[:, 1] = df.iloc[:, 1].astype(str).str.strip().str.lower()
 
-    # Debugging: Zeige die einzigartigen Werte in Spalte B
-    st.write("Einträge in Spalte B (bereinigt):", df.iloc[:, 1].unique())
-
     # Prüfe, ob "adler" und "zosel" existieren
     if "adler" not in df.iloc[:, 1].values or "zosel" not in df.iloc[:, 1].values:
         st.error("Die Werte 'Adler' oder 'Zosel' wurden in Spalte B nicht gefunden.")
@@ -170,10 +167,6 @@ if uploaded_file:
         ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"], dates
     )]
     extracted_data.columns = columns
-
-    # Debugging: Zeige die Daten
-    st.write("Inhalt von extracted_data:")
-    st.dataframe(extracted_data)
 
     # Daten als Excel-Datei exportieren
     output = BytesIO()
