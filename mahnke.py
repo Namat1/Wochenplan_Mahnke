@@ -41,18 +41,24 @@ st.write("Filtered Data:", filtered_data)
 
 # Insert names and process additional logic
 def additional_processing(data):
-    # Duplicate rows and insert names
+    # Dynamische Anzahl der Spalten bestimmen
+    num_columns = len(data.columns)
+    empty_row = [""] * num_columns
+
+    # Duplicate rows und Namen einfügen
     for i in range(5):
-        data.loc[len(data)] = ["", "", "", "", ""] + ["", ""] * 7  # Add blank row
-        data.iloc[-1, 1] = namen[i] if i < len(namen) else ""
-        data.iloc[-1, 2] = namen1[i] if i < len(namen1) else ""
+        data.loc[len(data)] = empty_row  # Leere Zeile hinzufügen
+        if i < len(namen):
+            data.iloc[-1, 1] = namen[i]  # Namen in Spalte B einfügen
+        if i < len(namen1):
+            data.iloc[-1, 2] = namen1[i]  # Namen in Spalte C einfügen
 
-    # Remove rows 5 to 10
-    data = data.drop(index=range(5, 11), errors='ignore')
+    # Zeilen 5 bis 10 löschen
+    data = data.drop(index=range(5, 11), errors="ignore")
 
-    # Remove "Tour" from column D
-    if 'D' in data.columns:
-        data['D'] = data['D'].str.replace("Tour", "", regex=False)
+    # Wort "Tour" aus Spalte D entfernen
+    if "D" in data.columns:
+        data["D"] = data["D"].astype(str).str.replace("Tour", "", regex=False)
 
     return data
 
