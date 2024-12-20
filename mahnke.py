@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
+from openpyxl import Workbook
 from io import BytesIO
 
 # Funktion zum Extrahieren der relevanten Daten
@@ -44,6 +46,29 @@ def extract_work_data(df):
 
     return pd.DataFrame(result)
 
+# Funktion, um die Datumszeile zu erstellen
+def create_header_with_dates(df):
+    dates = [
+        df.iloc[1, 4],  # E2
+        df.iloc[1, 6],  # G2
+        df.iloc[1, 8],  # I2
+        df.iloc[1, 10], # K2
+        df.iloc[1, 12], # M2
+        df.iloc[1, 14], # O2
+        df.iloc[1, 16], # Q2
+    ]
+    return dates
+
+# Funktion, um die Spaltenbreite anzupassen
+def adjust_column_width(ws):
+    for col in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max_length + 2  # Padding für besseren Abstand
+
 # Streamlit App
 st.title("Übersicht der Wochenarbeit")
 uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
@@ -54,8 +79,15 @@ if uploaded_file:
     sheet = wb["Druck Fahrer"]
     data = pd.DataFrame(sheet.values)
 
-    # Extrahiere die Daten bis B145
+    # Extrahiere die Daten und das Datum
     extracted_data = extract_work_data(data)
+    dates = create_header_with_dates(data)
+
+    # Füge die Datumszeile unter die Wochentage hinzu
+    extracted_data.columns = pd.MultiIndex.from_tuples(
+        [("Nachname", ""), ("Vorname", "")] +
+        [(weekday, date) for weekday, date in zip(["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"], dates)]
+    )
 
     # Debugging: Zeige die Daten
     st.write("Inhalt von extracted_data:")
@@ -65,6 +97,8 @@ if uploaded_file:
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht")
+        ws = writer.sheets["Wochenübersicht"]
+        adjust_column_width(ws)  # Passe die Spaltenbreite an
     excel_data = output.getvalue()
 
     # Download-Option
