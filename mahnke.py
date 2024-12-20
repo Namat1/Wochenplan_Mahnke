@@ -12,12 +12,8 @@ def extract_work_data(df):
     excluded_words = ["Hoffahrer", "Waschteam", "Aushilfsfahrer"]
     result = []
 
-    # Suche nach Start- und Endindex basierend auf den Werten in Spalte A
-    start_index = df[df.iloc[:, 0] == 5009].index[0]  # Erste Zeile mit 5009
-    end_index = df[df.iloc[:, 0] == 2001].index[0]    # Erste Zeile mit 2001
-
-    row_index = start_index
-    while row_index <= end_index:
+    row_index = 10  # Start bei Zeile 11 (Index 10)
+    while row_index <= 144:  # Bis Zeile 145 (Index 144)
         lastname = df.iloc[row_index, 1]  # Spalte B
         firstname = df.iloc[row_index, 2]  # Spalte C
         activities_row = row_index + 1
