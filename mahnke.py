@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from io import BytesIO
 
 # Streamlit app definition
 st.title("Mahnke Wochenbericht")
@@ -65,17 +66,18 @@ def additional_processing(data):
 processed_data = additional_processing(filtered_data.copy())
 st.write("Processed Data:", processed_data)
 
-# Highlight rows 5 to 14 (example with pandas styling)
-def highlight_rows(data):
-    def highlight_row(row):
-        if 5 <= row.name <= 14:
-            return ['background-color: #F0E68C'] * len(row)
-        else:
-            return [''] * len(row)
-    return data.style.apply(highlight_row, axis=1)
+# Save to a new Excel file and offer for download
+def convert_df_to_excel(data):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        data.to_excel(writer, index=False, sheet_name="Processed Data")
+    processed_file = output.getvalue()
+    return processed_file
 
-styled_data = highlight_rows(processed_data.copy())
-st.write("Styled Data:", styled_data)
-
-# Download button for processed data
-st.download_button("Download Processed Report", processed_data.to_csv(index=False), "processed_report.csv", "text/csv")
+excel_data = convert_df_to_excel(processed_data)
+st.download_button(
+    label="Download Processed Report as Excel",
+    data=excel_data,
+    file_name="processed_report.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
