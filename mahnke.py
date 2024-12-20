@@ -78,8 +78,14 @@ def style_excel(ws, calendar_week):
     ws["A1"].alignment = Alignment(horizontal="left", vertical="center")
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ws.max_column)
 
-    # Header-Zeile fett, zentriert und farbig (nur die erste Zeile)
-    for col in ws.iter_cols(min_row=2, max_row=2, min_col=1, max_col=ws.max_column):
+    # Abteilung unterhalb der KW
+    ws["A2"].value = "Abteilung: Fuhrpark NFC"
+    ws["A2"].font = Font(bold=True)
+    ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
+    ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=ws.max_column)
+
+    # Header-Zeile fett, zentriert und farbig (nur die erste Zeile des Headers)
+    for col in ws.iter_cols(min_row=3, max_row=3, min_col=1, max_col=ws.max_column):
         for cell in col:
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             cell.font = Font(bold=True)
@@ -87,7 +93,7 @@ def style_excel(ws, calendar_week):
             cell.border = thin_border
 
     # Datenzeilen formatieren (abwechselnd einfärben)
-    for row in range(3, ws.max_row + 1):
+    for row in range(4, ws.max_row + 1):
         for cell in ws[row]:
             cell.alignment = Alignment(horizontal="center", vertical="center")
             cell.border = thin_border
@@ -138,9 +144,9 @@ if uploaded_file:
     # Daten als Excel-Datei exportieren
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=1)
+        extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
         ws = writer.sheets["Wochenübersicht"]
-        style_excel(ws, calendar_week)  # Optische Anpassungen und KW-Eintrag
+        style_excel(ws, calendar_week)  # Optische Anpassungen und KW-/Abteilungs-Eintrag
     excel_data = output.getvalue()
 
     # Download-Option
