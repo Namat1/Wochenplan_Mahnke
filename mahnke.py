@@ -2,73 +2,36 @@ import streamlit as st
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
-from openpyxl.utils import range_boundaries, get_column_letter
+from openpyxl.utils import get_column_letter
 from datetime import datetime
 from io import BytesIO
-
-# Funktion zum Überspringen verbundener Zellen
-def is_merged_cell_and_wide(ws, row, col):
-    """Prüft, ob die Zelle Teil eines verbundenen Bereichs ist und sich nur in derselben Zeile befindet."""
-    for merged_range in ws.merged_cells.ranges:
-        min_col, min_row, max_col, max_row = range_boundaries(str(merged_range))
-        # Prüfe, ob die Zelle Teil eines verbundenen Bereichs ist
-        if min_row <= row <= max_row and min_col <= col <= max_col:
-            # Ignoriere nur, wenn der Bereich in derselben Zeile ist
-            if min_row == max_row:  # Gleiche Zeile
-                return True
-    return False
 
 # Funktion, um den Bereich von "B11" bis Nachname "Steckel" zu finden
 def find_range(ws, end_name, column=2):  # Spalte B = 2
     start_row = 11
     end_row = None
-    debug_values = []
     for row in range(start_row, ws.max_row + 1):
         value = ws.cell(row=row, column=column).value
-        debug_values.append(value)  # Zum Debuggen alle Werte speichern
         if value == end_name:
             end_row = row
             break
-    return start_row, end_row, debug_values
-
-# Funktion zur Berechnung der Kalenderwoche
-def get_calendar_week(date_value):
-    """Berechnet die Kalenderwoche aus einem Datum."""
-    try:
-        date = datetime.strptime(str(date_value).split()[0], "%Y-%m-%d")  # Entfernt Zeitanteil
-        return date.isocalendar()[1]
-    except ValueError:
-        raise ValueError(f"Ungültiges Datum: {date_value}")
+    return start_row, end_row
 
 # Extrahiere Daten
 def extract_range_data(ws, end_name="Steckel"):
     """Extrahiert Daten von B11 bis einschließlich der Zeile mit Nachname 'Steckel'."""
-    start_row, end_row, debug_values = find_range(ws, end_name)
+    start_row, end_row = find_range(ws, end_name)
     if not start_row or not end_row:
-        raise ValueError(
-            f"Bereich bis {end_name} wurde nicht gefunden. "
-            f"Gefundene Werte in Spalte B: {debug_values}"
-        )
+        raise ValueError(f"Bereich bis {end_name} wurde nicht gefunden.")
 
-    st.write("Gefundene Werte in Spalte B:", debug_values)  # Debugging-Ausgabe
-
-    relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
+    # Wörter, die wir ignorieren wollen
+    ignored_words = ["Hoffahrer", "Waschteam", "Aushilfsfahrer"]
     result = []
 
     # Iteriere durch den Bereich
-    for row in range(start_row, end_row + 1, 2):
-        if is_merged_cell_and_wide(ws, row, 2):  # Verbundene Zellen in derselben Zeile
-            st.write(f"Überspringe verbundene Zelle in Zeile {row}")
-            continue
-
+    for row in range(start_row, end_row + 1, 2):  # Jede zweite Zeile ist der Nachname
         lastname = ws.cell(row=row, column=2).value  # Nachname
         firstname = ws.cell(row=row, column=3).value  # Vorname
-
-        # Überspringe Nachnamen "Leer"
-        if str(lastname).strip().lower() == "leer":
-            st.write(f"Überspringe Nachname 'Leer' in Zeile {row}")
-            continue
-
         activities_row = row + 1  # Aktivitäten sind eine Zeile darunter
 
         row_data = {
@@ -83,16 +46,18 @@ def extract_range_data(ws, end_name="Steckel"):
             "Samstag": "",
         }
 
-        # Iteriere durch die Wochentage
+        # Iteriere durch die Wochentage und lese Aktivitäten aus Spalten E bis R
         for day, (col1, col2) in enumerate(
             [(5, 6), (7, 8), (9, 10), (11, 12), (13, 14), (15, 16), (17, 18)]
         ):
             activity1 = ws.cell(row=activities_row, column=col1).value
             activity2 = ws.cell(row=activities_row, column=col2).value
 
-            # Aktivitäten kombinieren
-            activity = " ".join(filter(lambda x: x and x != "0", [str(activity1 or "").strip(), str(activity2 or "").strip()]))
-            if any(word in activity for word in relevant_words):
+            # Kombiniere beide Aktivitäten
+            activity = " ".join(filter(None, [str(activity1 or "").strip(), str(activity2 or "").strip()]))
+
+            # Ignoriere Aktivitäten, die die ignorierten Wörter enthalten
+            if not any(word in activity for word in ignored_words):
                 weekday = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day]
                 row_data[weekday] = activity
 
