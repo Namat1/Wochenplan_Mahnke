@@ -11,7 +11,7 @@ def filter_excel_data(file):
     workbook = load_workbook(file, data_only=True)
     if "Druck Fahrer" not in workbook.sheetnames:
         st.error("Das Blatt 'Druck Fahrer' wurde nicht gefunden.")
-        return None, None
+        return None
 
     sheet = workbook["Druck Fahrer"]
 
@@ -36,8 +36,14 @@ def filter_excel_data(file):
     for row in sheet.iter_rows(min_row=1, max_row=end_row):
         for cell in row:
             new_cell = filtered_sheet.cell(row=cell.row, column=cell.column, value=cell.value)
+            # Copy cell styles if they exist
             if cell.has_style:
-                new_cell._style = cell._style
+                new_cell.font = cell.font
+                new_cell.border = cell.border
+                new_cell.fill = cell.fill
+                new_cell.number_format = cell.number_format
+                new_cell.protection = cell.protection
+                new_cell.alignment = cell.alignment
 
     return filtered_workbook
 
