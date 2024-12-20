@@ -70,8 +70,9 @@ def create_header_with_dates(df):
 # Funktion, um die Tabelle optisch aufzubereiten
 def style_excel(ws, calendar_week):
     # Farben und Stil für Header und Gitterlinien
-    header_fill = PatternFill(start_color="FFCCFFCC", end_color="FFCCFFCC", fill_type="solid")  # Grün für Header
+    header_fill = PatternFill(start_color="FFB6C1", end_color="FFB6C1", fill_type="solid")  # Rosarot für Header
     alt_row_fill = PatternFill(start_color="FFF0F0F0", end_color="FFF0F0F0", fill_type="solid")  # Grau für Zeilen
+    title_fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")  # Gelb für KW
     thin_border = Border(
         left=Side(style="thin"),
         right=Side(style="thin"),
@@ -81,21 +82,23 @@ def style_excel(ws, calendar_week):
 
     # KW-Eintrag oberhalb der Tabelle
     ws["A1"].value = f"Kalenderwoche: {calendar_week + 1}"  # KW + 1
-    ws["A1"].font = Font(bold=True, size=14)
-    ws["A1"].alignment = Alignment(horizontal="left", vertical="center")
+    ws["A1"].font = Font(bold=True, size=16)
+    ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+    ws["A1"].fill = title_fill
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ws.max_column)
 
     # Abteilung unterhalb der KW
     ws["A2"].value = "Abteilung: Fuhrpark NFC"
-    ws["A2"].font = Font(bold=True, size=12)
-    ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
+    ws["A2"].font = Font(bold=True, size=14)
+    ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
+    ws["A2"].fill = title_fill
     ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=ws.max_column)
 
     # Header-Zeile fett, zentriert und farbig (nur die erste Zeile des Headers)
     for col in ws.iter_cols(min_row=3, max_row=3, min_col=1, max_col=ws.max_column):
         for cell in col:
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-            cell.font = Font(bold=True)
+            cell.font = Font(bold=True, size=12)
             cell.fill = header_fill
             cell.border = thin_border
 
@@ -109,6 +112,9 @@ def style_excel(ws, calendar_week):
 
     # Spaltenbreite anpassen
     adjust_column_width(ws)
+
+    # Auto-Filter hinzufügen
+    ws.auto_filter.ref = ws.dimensions
 
     # Erste drei Zeilen fixieren
     ws.freeze_panes = "A4"
