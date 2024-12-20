@@ -114,9 +114,11 @@ if uploaded_file:
     extracted_data = extract_work_data(data)
     dates = create_header_with_dates(data)
 
-    # Erstelle die Tabelle mit einem flachen Header
-    extracted_data.insert(0, "Datum", dates)  # Datum-Spalten hinzufügen
-    extracted_data.columns = ["Nachname", "Vorname", "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
+    # Flache Spaltenüberschriften erstellen
+    columns = ["Nachname", "Vorname"] + [f"{weekday} ({date})" for weekday, date in zip(
+        ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"], dates
+    )]
+    extracted_data.columns = columns
 
     # Debugging: Zeige die Daten
     st.write("Inhalt von extracted_data:")
