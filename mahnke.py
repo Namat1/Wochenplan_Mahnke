@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from openpyxl import load_workbook
-from openpyxl.styles import Alignment, Font
+from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from io import BytesIO
 
@@ -61,11 +61,22 @@ def create_header_with_dates(df):
 
 # Funktion, um die Tabelle optisch aufzubereiten
 def style_excel(ws):
-    # Titel-Zeile fett und zentriert
+    # Farben für Header und abwechselnde Zeilen
+    header_fill = PatternFill(start_color="FFCCFFCC", end_color="FFCCFFCC", fill_type="solid")  # Grün für Header
+    alt_row_fill = PatternFill(start_color="FFF0F0F0", end_color="FFF0F0F0", fill_type="solid")  # Grau für Zeilen
+
+    # Header-Zeile fett, zentriert und farbig
     for col in ws.iter_cols(min_row=1, max_row=2, min_col=1, max_col=ws.max_column):
         for cell in col:
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             cell.font = Font(bold=True)
+            cell.fill = header_fill
+
+    # Abwechselnde Zeilen einfärben
+    for row in range(3, ws.max_row + 1):  # Ab der dritten Zeile
+        for cell in ws[row]:
+            if row % 2 == 0:  # Jede zweite Zeile einfärben
+                cell.fill = alt_row_fill
 
     # Spaltenbreite anpassen
     adjust_column_width(ws)
