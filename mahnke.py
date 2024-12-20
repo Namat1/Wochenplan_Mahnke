@@ -3,7 +3,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 
 # Funktion zum Extrahieren der relevanten Daten
@@ -73,7 +73,7 @@ def style_excel(ws, calendar_week):
     )
 
     # KW-Eintrag oberhalb der Tabelle
-    ws["A1"].value = f"Kalenderwoche: {calendar_week}"
+    ws["A1"].value = f"Kalenderwoche: {calendar_week + 1}"  # KW + 1
     ws["A1"].font = Font(bold=True)
     ws["A1"].alignment = Alignment(horizontal="left", vertical="center")
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ws.max_column)
