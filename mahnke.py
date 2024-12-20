@@ -1,24 +1,22 @@
 import streamlit as st
 import pandas as pd
 from openpyxl import load_workbook
+from io import BytesIO
 
 # Funktion zum Extrahieren der relevanten Daten
 def extract_work_data(df):
     relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
     result = []
 
-    # Iteriere durch die Namen, beginnend bei B11 und C11
     row_index = 10  # Start bei Zeile 11 (Index 10)
-    while row_index < len(df):
+    while row_index <= 144:  # Bis Zeile 145 (Index 144)
         lastname = df.iloc[row_index, 1]  # Spalte B
         firstname = df.iloc[row_index, 2]  # Spalte C
-
-        # Aktivitäten in der nächsten Zeile
         activities_row = row_index + 1
-        if activities_row >= len(df):  # Sicherstellen, dass die Zeile existiert
+
+        if activities_row >= len(df):  # Ende der Daten erreicht
             break
 
-        # Iteriere durch die Wochentage
         for day, (activity_start_col, date_col) in enumerate(
             [(4, 4), (6, 6), (8, 8), (10, 10), (12, 12), (14, 14), (16, 16)]
         ):
@@ -28,23 +26,13 @@ def extract_work_data(df):
                     "Nachname": lastname,
                     "Vorname": firstname,
                     "Wochentag": ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day],
-                    "Datum": df.iloc[1, date_col],  # Datum aus Zeile 2
+                    "Datum": df.iloc[1, date_col],
                     "Tätigkeit": activity
                 })
 
-        # Springe zum nächsten Namen (zwei Zeilen weiter)
-        row_index += 2
+        row_index += 2  # Zwei Zeilen weiter
 
     return pd.DataFrame(result)
-
-# Funktion, um mehrzeiligen Header zu erstellen
-def create_header(dates):
-    # Erster Header: Wochentage
-    weekdays = ["Nachname", "Vorname"] + ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
-    # Zweiter Header: Datum
-    sub_header = ["", ""] + list(dates)
-
-    return pd.MultiIndex.from_arrays([weekdays, sub_header])
 
 # Streamlit App
 st.title("Übersicht der Wochenarbeit")
@@ -56,28 +44,24 @@ if uploaded_file:
     sheet = wb["Druck Fahrer"]
     data = pd.DataFrame(sheet.values)
 
-    # Holen der Datumswerte aus den definierten Spalten
-    dates = [
-        data.iloc[1, 4],  # E2
-        data.iloc[1, 6],  # G2
-        data.iloc[1, 8],  # I2
-        data.iloc[1, 10], # K2
-        data.iloc[1, 12], # M2
-        data.iloc[1, 14], # O2
-        data.iloc[1, 16], # Q2
-    ]
-
-    # Erstellen eines DataFrames mit mehrzeiligem Header
-    header = create_header(dates)
+    # Extrahiere die Daten bis B145
     extracted_data = extract_work_data(data)
 
-    # Zeige die Tabelle
-    st.write("Tabellenübersicht:")
+    # Debugging: Zeige die Daten
+    st.write("Typ von extracted_data:", type(extracted_data))
+    st.write("Inhalt von extracted_data:")
     st.dataframe(extracted_data)
+
+    # Daten als Excel-Datei exportieren
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht")
+    excel_data = output.getvalue()
 
     # Download-Option
     st.download_button(
         label="Download als Excel",
-        data=extracted_data.to_excel(index=False, engine="openpyxl"),
-        file_name="Wochenübersicht.xlsx"
+        data=excel_data,
+        file_name="Wochenübersicht.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
