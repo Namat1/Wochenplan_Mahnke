@@ -6,50 +6,22 @@ from openpyxl.utils import get_column_letter
 from datetime import datetime
 from io import BytesIO
 
-# Funktion, um den Bereich von "B11" bis Nachname "Steckel" zu finden
-def find_range(ws, end_name, column=2):  # Spalte B = 2
-    start_row = 11
-    end_row = None
-    for row in range(start_row, ws.max_row + 1):
-        value = ws.cell(row=row, column=column).value
-        if value == end_name:
-            end_row = row
-            break
-    return start_row, end_row
-
-# Funktion zur Berechnung der Kalenderwoche
-def get_calendar_week(date_value):
-    """Berechnet die Kalenderwoche aus einem Datum."""
-    if not date_value:
-        raise ValueError("Datum in der Zelle ist leer oder ungültig.")
-    try:
-        # Versuche, das Datum direkt zu parsen (ohne Zeitanteil)
-        if isinstance(date_value, datetime):
-            return date_value.isocalendar()[1]
-        # Konvertiere String-Datum ins Datumsformat
-        parsed_date = datetime.strptime(str(date_value).split()[0], "%Y-%m-%d")
-        return parsed_date.isocalendar()[1]
-    except Exception as e:
-        raise ValueError(f"Ungültiges Datum: {date_value}. Fehler: {str(e)}")
-
-# Extrahiere Daten
-def extract_range_data(ws, end_name="Steckel"):
-    """Extrahiert Daten von B11 bis einschließlich der Zeile mit Nachname 'Steckel'."""
-    start_row, end_row = find_range(ws, end_name)
-    if not start_row or not end_row:
-        raise ValueError(f"Bereich bis {end_name} wurde nicht gefunden.")
-
-    # Wörter, die wir in den Aktivitäten ignorieren
-    ignored_words = ["Hoffahrer", "Waschteam", "Aushilfsfahrer"]
+# Funktion zum Extrahieren der relevanten Daten
+def extract_work_data(df):
+    relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
     result = []
 
-    # Iteriere durch den Bereich
-    for row in range(start_row, end_row + 1, 2):  # Jede zweite Zeile ist der Nachname
-        lastname = ws.cell(row=row, column=2).value  # Nachname
-        firstname = ws.cell(row=row, column=3).value  # Vorname
-        activities_row = row + 1  # Aktivitäten sind eine Zeile darunter
+    row_index = 10  # Start bei Zeile 11 (Index 10)
+    while row_index <= 144:  # Bis Zeile 145 (Index 144)
+        lastname = df.iloc[row_index, 1]  # Spalte B
+        firstname = df.iloc[row_index, 2]  # Spalte C
+        activities_row = row_index + 1
 
-        row_data = {
+        if activities_row >= len(df):  # Ende der Daten erreicht
+            break
+
+        # Initialisiere Zeilen für die Ausgabe
+        row = {
             "Nachname": lastname,
             "Vorname": firstname,
             "Sonntag": "",
@@ -61,29 +33,46 @@ def extract_range_data(ws, end_name="Steckel"):
             "Samstag": "",
         }
 
-        # Iteriere durch die Wochentage und lese Aktivitäten aus Spalten E bis R
+        # Iteriere durch die Wochentage und prüfe beide Zellen (z. B. E und F für Sonntag)
         for day, (col1, col2) in enumerate(
-            [(5, 6), (7, 8), (9, 10), (11, 12), (13, 14), (15, 16), (17, 18)]
+            [(4, 5), (6, 7), (8, 9), (10, 11), (12, 13), (14, 15), (16, 17)]
         ):
-            activity1 = ws.cell(row=activities_row, column=col1).value
-            activity2 = ws.cell(row=activities_row, column=col2).value
+            # Aktivität aus beiden Zellen auslesen
+            activity1 = str(df.iloc[activities_row, col1]).strip()
+            activity2 = str(df.iloc[activities_row, col2]).strip()
 
-            # Kombiniere beide Aktivitäten und prüfe, ob sie ignorierte Wörter enthalten
-            activity = " ".join(filter(None, [str(activity1 or "").strip(), str(activity2 or "").strip()]))
-            if not any(word in activity for word in ignored_words):  # Nur behalten, wenn keine ignorierten Wörter enthalten sind
+            # Kombiniere beide Aktivitäten, falls sie nicht leer oder "0" sind
+            activity = " ".join(filter(lambda x: x and x != "0", [activity1, activity2])).strip()
+
+            # Prüfen, ob eine der relevanten Aktivitäten in der Kombination vorkommt
+            if any(word in activity for word in relevant_words):
                 weekday = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day]
-                row_data[weekday] = activity
+                row[weekday] = activity
 
-        result.append(row_data)
+        result.append(row)
+        row_index += 2  # Zwei Zeilen weiter
 
     return pd.DataFrame(result)
 
-# Formatierung
+# Funktion, um die Datumszeile zu erstellen
+def create_header_with_dates(df):
+    dates = [
+        pd.to_datetime(df.iloc[1, 4]).strftime('%d.%m.%Y'),  # E2
+        pd.to_datetime(df.iloc[1, 6]).strftime('%d.%m.%Y'),  # G2
+        pd.to_datetime(df.iloc[1, 8]).strftime('%d.%m.%Y'),  # I2
+        pd.to_datetime(df.iloc[1, 10]).strftime('%d.%m.%Y'), # K2
+        pd.to_datetime(df.iloc[1, 12]).strftime('%d.%m.%Y'), # M2
+        pd.to_datetime(df.iloc[1, 14]).strftime('%d.%m.%Y'), # O2
+        pd.to_datetime(df.iloc[1, 16]).strftime('%d.%m.%Y'), # Q2
+    ]
+    return dates
+
+# Funktion, um die Tabelle optisch aufzubereiten
 def style_excel(ws, calendar_week):
-    """Formatierung der Excel-Datei."""
-    header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")
-    alt_row_fill = PatternFill(start_color="FFFFF0AA", end_color="FFFFF0AA", fill_type="solid")
-    title_fill = PatternFill(start_color="FF4682B4", end_color="FF4682B4", fill_type="solid")
+    # Farben und Stil für Header und Gitterlinien
+    header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")  # Hellblau für Header
+    alt_row_fill = PatternFill(start_color="FFFFF0AA", end_color="FFFFF0AA", fill_type="solid")  # Hellgelb für Zeilen
+    title_fill = PatternFill(start_color="FF4682B4", end_color="FF4682B4", fill_type="solid")  # Dunkelblau für KW/Abteilung
     thin_border = Border(
         left=Side(style="thin"),
         right=Side(style="thin"),
@@ -91,20 +80,21 @@ def style_excel(ws, calendar_week):
         bottom=Side(style="thin")
     )
 
-    # KW und Abteilung
-    ws["A1"].value = f"Kalenderwoche: {calendar_week + 1}"
+    # KW-Eintrag oberhalb der Tabelle
+    ws["A1"].value = f"Kalenderwoche: {calendar_week + 1}"  # KW + 1
     ws["A1"].font = Font(bold=True, size=16, color="FFFFFF")
     ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
     ws["A1"].fill = title_fill
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ws.max_column)
 
+    # Abteilung unterhalb der KW
     ws["A2"].value = "Abteilung: Fuhrpark NFC"
     ws["A2"].font = Font(bold=True, size=14, color="FFFFFF")
     ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
     ws["A2"].fill = title_fill
     ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=ws.max_column)
 
-    # Header
+    # Header-Zeile fett, zentriert und farbig (nur die erste Zeile des Headers)
     for col in ws.iter_cols(min_row=3, max_row=3, min_col=1, max_col=ws.max_column):
         for cell in col:
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -112,16 +102,21 @@ def style_excel(ws, calendar_week):
             cell.fill = header_fill
             cell.border = thin_border
 
+    # Datenzeilen formatieren (abwechselnd einfärben)
     for row in range(4, ws.max_row + 1):
         for cell in ws[row]:
             cell.alignment = Alignment(horizontal="center", vertical="center")
             cell.border = thin_border
-            if row % 2 == 0:
+            if row % 2 == 0:  # Jede zweite Zeile einfärben
                 cell.fill = alt_row_fill
 
+    # Spaltenbreite anpassen
+    adjust_column_width(ws)
+
+    # Erste drei Zeilen fixieren
     ws.freeze_panes = "A4"
 
-# Spaltenbreite
+# Funktion, um die Spaltenbreite anzupassen
 def adjust_column_width(ws):
     for col in ws.columns:
         max_length = 0
@@ -129,40 +124,48 @@ def adjust_column_width(ws):
         for cell in col:
             if cell.value:
                 max_length = max(max_length, len(str(cell.value)))
-        ws.column_dimensions[col_letter].width = max_length + 2
+        ws.column_dimensions[col_letter].width = max_length + 2  # Padding für besseren Abstand
 
-# Streamlit-App
+# Streamlit App
 st.title("Übersicht der Wochenarbeit")
 uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
 
 if uploaded_file:
+    # Lade die Excel-Datei
     wb = load_workbook(uploaded_file, data_only=True)
-    ws = wb["Druck Fahrer"]
+    sheet = wb["Druck Fahrer"]
+    data = pd.DataFrame(sheet.values)
 
-    try:
-        extracted_data = extract_range_data(ws, end_name="Steckel")
-        first_date_cell = ws.cell(row=2, column=5).value
-        st.write(f"Gefundenes Datum in E2: {first_date_cell}")  # Debug-Ausgabe
+    # Extrahiere die Daten und das Datum
+    extracted_data = extract_work_data(data)
+    dates = create_header_with_dates(data)
 
-        # Berechne die Kalenderwoche
-        calendar_week = get_calendar_week(first_date_cell)
+    # Kalenderwoche berechnen
+    first_date = pd.to_datetime(dates[0], format='%d.%m.%Y')
+    calendar_week = first_date.isocalendar()[1]
 
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            extracted_data.to_excel(writer, index=False, sheet_name="Bereich B11 bis Steckel", startrow=2)
-            styled_ws = writer.sheets["Bereich B11 bis Steckel"]
-            style_excel(styled_ws, calendar_week)
+    # Flache Spaltenüberschriften erstellen
+    columns = ["Nachname", "Vorname"] + [f"{weekday} ({date})" for weekday, date in zip(
+        ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"], dates
+    )]
+    extracted_data.columns = columns
 
-        st.write("Gefundene Daten:")
-        st.dataframe(extracted_data)
+    # Debugging: Zeige die Daten
+    st.write("Inhalt von extracted_data:")
+    st.dataframe(extracted_data)
 
-        excel_data = output.getvalue()
-        st.download_button(
-            label="Download als Excel",
-            data=excel_data,
-            file_name="Bereich_B11_bis_Steckel.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
+    # Daten als Excel-Datei exportieren
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
+        ws = writer.sheets["Wochenübersicht"]
+        style_excel(ws, calendar_week)  # Optische Anpassungen und KW-/Abteilungs-Eintrag
+    excel_data = output.getvalue()
 
-    except ValueError as e:
-        st.error(f"Fehler: {str(e)}")
+    # Download-Option
+    st.download_button(
+        label="Download als Excel",
+        data=excel_data,
+        file_name="Wochenübersicht.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
