@@ -17,6 +17,21 @@ def find_range(ws, end_name, column=2):  # Spalte B = 2
             break
     return start_row, end_row
 
+# Funktion zur Berechnung der Kalenderwoche
+def get_calendar_week(date_value):
+    """Berechnet die Kalenderwoche aus einem Datum."""
+    if not date_value:
+        raise ValueError("Datum in der Zelle ist leer oder ungültig.")
+    try:
+        # Versuche, das Datum direkt zu parsen (ohne Zeitanteil)
+        if isinstance(date_value, datetime):
+            return date_value.isocalendar()[1]
+        # Konvertiere String-Datum ins Datumsformat
+        parsed_date = datetime.strptime(str(date_value).split()[0], "%Y-%m-%d")
+        return parsed_date.isocalendar()[1]
+    except Exception as e:
+        raise ValueError(f"Ungültiges Datum: {date_value}. Fehler: {str(e)}")
+
 # Extrahiere Daten
 def extract_range_data(ws, end_name="Steckel"):
     """Extrahiert Daten von B11 bis einschließlich der Zeile mit Nachname 'Steckel'."""
@@ -24,7 +39,7 @@ def extract_range_data(ws, end_name="Steckel"):
     if not start_row or not end_row:
         raise ValueError(f"Bereich bis {end_name} wurde nicht gefunden.")
 
-    # Wörter, die wir ignorieren wollen
+    # Wörter, die wir in den Aktivitäten ignorieren
     ignored_words = ["Hoffahrer", "Waschteam", "Aushilfsfahrer"]
     result = []
 
@@ -53,11 +68,9 @@ def extract_range_data(ws, end_name="Steckel"):
             activity1 = ws.cell(row=activities_row, column=col1).value
             activity2 = ws.cell(row=activities_row, column=col2).value
 
-            # Kombiniere beide Aktivitäten
+            # Kombiniere beide Aktivitäten und prüfe, ob sie ignorierte Wörter enthalten
             activity = " ".join(filter(None, [str(activity1 or "").strip(), str(activity2 or "").strip()]))
-
-            # Ignoriere Aktivitäten, die die ignorierten Wörter enthalten
-            if not any(word in activity for word in ignored_words):
+            if not any(word in activity for word in ignored_words):  # Nur behalten, wenn keine ignorierten Wörter enthalten sind
                 weekday = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day]
                 row_data[weekday] = activity
 
@@ -129,6 +142,9 @@ if uploaded_file:
     try:
         extracted_data = extract_range_data(ws, end_name="Steckel")
         first_date_cell = ws.cell(row=2, column=5).value
+        st.write(f"Gefundenes Datum in E2: {first_date_cell}")  # Debug-Ausgabe
+
+        # Berechne die Kalenderwoche
         calendar_week = get_calendar_week(first_date_cell)
 
         output = BytesIO()
@@ -149,4 +165,4 @@ if uploaded_file:
         )
 
     except ValueError as e:
-        st.error(str(e))
+        st.error(f"Fehler: {str(e)}")
