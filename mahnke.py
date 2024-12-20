@@ -1,34 +1,49 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
+import openpyxl
+from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.datavalidation import DataValidation
 
 def filter_excel_data(file):
     # Load the Excel file
-    xls = pd.ExcelFile(file)
-    if "Druck Fahrer" not in xls.sheet_names:
+    workbook = load_workbook(file, data_only=True)
+    if "Druck Fahrer" not in workbook.sheetnames:
         st.error("Das Blatt 'Druck Fahrer' wurde nicht gefunden.")
-        return None
+        return None, None
 
-    df = pd.read_excel(xls, sheet_name="Druck Fahrer")
-
-    # Exclude column A and keep column B onward
-    df = df.iloc[:, 1:]
+    sheet = workbook["Druck Fahrer"]
 
     # Find the row where "Aushilfsfahrer" is present
-    end_row = df[df.isin(["Aushilfsfahrer"]).any(axis=1)].index
+    end_row = None
+    for row in sheet.iter_rows(min_row=1, max_col=1, max_row=sheet.max_row):
+        for cell in row:
+            if cell.value == "Aushilfsfahrer":
+                end_row = cell.row - 1
+                break
+        if end_row:
+            break
 
-    if not end_row.empty:
-        # Select data until the row before "Aushilfsfahrer"
-        filtered_data = df.iloc[:end_row[0]]
-    else:
-        filtered_data = df  # Copy the entire sheet if "Aushilfsfahrer" not found
+    if not end_row:
+        end_row = sheet.max_row
 
-    return filtered_data
+    # Create a new workbook for the filtered data
+    filtered_workbook = openpyxl.Workbook()
+    filtered_sheet = filtered_workbook.active
+    filtered_sheet.title = "Gefilterte Daten"
 
-def to_excel(df):
+    for row in sheet.iter_rows(min_row=1, max_row=end_row):
+        for cell in row:
+            new_cell = filtered_sheet.cell(row=cell.row, column=cell.column, value=cell.value)
+            if cell.has_style:
+                new_cell._style = cell._style
+
+    return filtered_workbook
+
+def to_bytes(workbook):
     output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='Gefilterte Daten')
+    workbook.save(output)
     processed_data = output.getvalue()
     return processed_data
 
@@ -39,14 +54,12 @@ uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
 
 if uploaded_file:
     with st.spinner("Daten werden verarbeitet..."):
-        filtered_data = filter_excel_data(uploaded_file)
+        filtered_workbook = filter_excel_data(uploaded_file)
 
-    if filtered_data is not None:
+    if filtered_workbook:
         st.success("Daten wurden erfolgreich gefiltert.")
-        st.write("Gefilterte Daten:")
-        st.dataframe(filtered_data)
 
-        excel_data = to_excel(filtered_data)
+        excel_data = to_bytes(filtered_workbook)
         st.download_button(
             label="Gefilterte Excel-Datei herunterladen",
             data=excel_data,
