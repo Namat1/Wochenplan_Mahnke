@@ -5,13 +5,22 @@ import numpy as np
 # Streamlit app definition
 st.title("Mahnke Wochenbericht")
 
-# Load or simulate data
-def load_data():
-    # Replace this with actual Excel file loading logic
-    # For now, simulate a DataFrame similar to the Excel structure
-    return pd.DataFrame(np.random.randint(0, 100, size=(300, 18)), columns=list('ABCDEFGHIJKLMNOPQR'))
+# File upload section
+uploaded_file = st.file_uploader("Upload your Excel file", type=["xlsx", "csv"])
 
-data = load_data()
+if uploaded_file:
+    try:
+        if uploaded_file.name.endswith(".xlsx"):
+            data = pd.read_excel(uploaded_file)
+        elif uploaded_file.name.endswith(".csv"):
+            data = pd.read_csv(uploaded_file)
+    except Exception as e:
+        st.error(f"Error reading file: {e}")
+        st.stop()
+else:
+    st.info("Please upload an Excel or CSV file to proceed.")
+    st.stop()
+
 st.write("Original Data:", data)
 
 # Retainable words and names
@@ -62,4 +71,5 @@ def highlight_rows(data):
 styled_data = highlight_rows(processed_data.copy())
 st.write("Styled Data:", styled_data)
 
+# Download button for processed data
 st.download_button("Download Processed Report", processed_data.to_csv(index=False), "processed_report.csv", "text/csv")
