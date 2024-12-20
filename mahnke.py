@@ -11,6 +11,9 @@ def filter_excel_data(file):
 
     df = pd.read_excel(xls, sheet_name="Druck Fahrer")
 
+    # Exclude column A and keep column B onward
+    df = df.iloc[:, 1:]
+
     # Find the row where "Aushilfsfahrer" is present
     end_row = df[df.isin(["Aushilfsfahrer"]).any(axis=1)].index
 
