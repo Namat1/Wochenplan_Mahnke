@@ -32,10 +32,17 @@ def process_excel(file):
     result = []
 
     for index, row in df_names.iterrows():
+        if index + data_start_row >= len(df):
+            break  # Abbruch, wenn die Zeile außerhalb des DataFrames liegt
         for i, word in enumerate(keywords):
             for date_idx, date in enumerate(weekdays):
-                cell_value = df.iloc[index + data_start_row, 4 + date_idx]  # Entsprechende Zellen prüfen
-                if pd.notna(cell_value) and word in str(cell_value):
+                if 4 + date_idx >= df.shape[1]:  # Abbruch, wenn die Spalte außerhalb des DataFrames liegt
+                    continue
+                cell_value = df.iloc[index + data_start_row, 4 + date_idx]
+                # Überspringe verbundene Zellen (NaN-Werte)
+                if pd.isna(cell_value):
+                    continue
+                if word in str(cell_value):
                     result.append({
                         "Nachname": row["Nachname"],
                         "Vorname": row["Vorname"],
