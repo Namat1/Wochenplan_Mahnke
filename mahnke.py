@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
-from openpyxl.utils import range_boundaries
+from openpyxl.utils import range_boundaries, get_column_letter
 from datetime import datetime
 from io import BytesIO
 
@@ -147,7 +147,7 @@ def style_excel(ws, calendar_week):
 def adjust_column_width(ws):
     for col in ws.columns:
         max_length = 0
-        col_letter = col[0].column_letter
+        col_letter = get_column_letter(col[0].column)  # Korrekte Spaltenbuchstaben
         for cell in col:
             if cell.value:
                 max_length = max(max_length, len(str(cell.value)))
