@@ -7,12 +7,14 @@ from datetime import datetime
 from io import BytesIO
 
 # Funktion zum Überspringen verbundener Zellen
-def is_merged_cell_and_wide(ws, row, col, min_width=4):
-    """Prüft, ob die gegebene Zelle Teil eines verbundenen Bereichs ist und breiter als `min_width`."""
+def is_merged_cell_and_wide(ws, row, col):
+    """Prüft, ob die Zelle Teil eines verbundenen Bereichs ist und sich nur in derselben Zeile befindet."""
     for merged_range in ws.merged_cells.ranges:
         min_col, min_row, max_col, max_row = range_boundaries(str(merged_range))
+        # Prüfe, ob die Zelle Teil eines verbundenen Bereichs ist
         if min_row <= row <= max_row and min_col <= col <= max_col:
-            if max_col - min_col + 1 > min_width:  # Breite des Bereichs prüfen
+            # Ignoriere nur, wenn der Bereich in derselben Zeile ist
+            if min_row == max_row:  # Gleiche Zeile
                 return True
     return False
 
@@ -55,7 +57,7 @@ def extract_range_data(ws, end_name="Steckel"):
 
     # Iteriere durch den Bereich
     for row in range(start_row, end_row + 1, 2):
-        if is_merged_cell_and_wide(ws, row, 2):  # Verbundene Zellen
+        if is_merged_cell_and_wide(ws, row, 2):  # Verbundene Zellen in derselben Zeile
             st.write(f"Überspringe verbundene Zelle in Zeile {row}")
             continue
 
