@@ -38,10 +38,15 @@ def extract_work_data(df):
 
 # Funktion, um mehrzeiligen Header zu erstellen
 def create_header(dates):
+    # Prüfe, ob die Anzahl der Datumswerte korrekt ist
+    if len(dates) != 7:
+        raise ValueError(f"Erwartet 7 Datumswerte, aber {len(dates)} gefunden.")
+
     # Erster Header: Wochentage
     weekdays = ["Nachname", "Vorname"] + ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
     # Zweiter Header: Datum
     sub_header = ["", ""] + list(dates)
+
     return pd.MultiIndex.from_arrays([weekdays, sub_header])
 
 # Streamlit App
@@ -58,9 +63,13 @@ if uploaded_file:
     dates = data.iloc[1, 4::2]  # Datum ab Spalte "E", jeder zweite Eintrag
 
     # Erstellen eines DataFrames mit mehrzeiligem Header
-    header = create_header(dates)
-    formatted_data = data.iloc[10:, 1:]  # Daten ab Zeile 11, Spalten ab B
-    formatted_data.columns = header
+    try:
+        header = create_header(dates)
+        formatted_data = data.iloc[10:, 1:]  # Daten ab Zeile 11, Spalten ab B
+        formatted_data.columns = header
+    except ValueError as e:
+        st.error(f"Fehler beim Erstellen des Headers: {e}")
+        st.stop()
 
     # Zeige die Tabelle
     st.write("Tabellenübersicht mit mehrzeiligem Header:")
