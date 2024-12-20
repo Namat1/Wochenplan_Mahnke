@@ -12,12 +12,20 @@ def extract_work_data(df):
     excluded_words = ["Hoffahrer", "Waschteam", "Aushilfsfahrer"]
     result = []
 
-    # Bereinige den DataFrame von Leerzeichen und falschen Formaten
-    df = df.applymap(lambda x: str(x).strip() if pd.notnull(x) else "")
+    # Bereinige Spalte B (zweite Spalte) von Leerzeichen und setze alles in Kleinbuchstaben
+    df.iloc[:, 1] = df.iloc[:, 1].astype(str).str.strip().str.lower()
 
-    # Suche nach Start- und Endindex basierend auf den Werten in Spalte A
-    start_index = df[df.iloc[:, 0] == "Adler"].index[0]
-    end_index = df[df.iloc[:, 0] == "Zosel"].index[0]
+    # Debugging: Zeige die einzigartigen Werte in Spalte B
+    st.write("Einträge in Spalte B (bereinigt):", df.iloc[:, 1].unique())
+
+    # Prüfe, ob "adler" und "zosel" existieren
+    if "adler" not in df.iloc[:, 1].values or "zosel" not in df.iloc[:, 1].values:
+        st.error("Die Werte 'Adler' oder 'Zosel' wurden in Spalte B nicht gefunden.")
+        st.stop()  # Beendet die Ausführung
+
+    # Suche nach Start- und Endindex basierend auf den Werten in Spalte B
+    start_index = df[df.iloc[:, 1] == "adler"].index[0]
+    end_index = df[df.iloc[:, 1] == "zosel"].index[0]
 
     row_index = start_index
     while row_index <= end_index:
