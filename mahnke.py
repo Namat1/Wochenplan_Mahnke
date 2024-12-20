@@ -110,6 +110,9 @@ def style_excel(ws, calendar_week):
     # Spaltenbreite anpassen
     adjust_column_width(ws)
 
+    # Erste drei Zeilen fixieren
+    ws.freeze_panes = "A4"
+
 # Funktion, um die Spaltenbreite anzupassen
 def adjust_column_width(ws):
     for col in ws.columns:
