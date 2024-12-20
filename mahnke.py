@@ -5,41 +5,47 @@ from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 from openpyxl.utils import range_boundaries
 from io import BytesIO
 
-# Funktion zum Überspringen verbundener Zellen
-def is_merged_cell(ws, row, col):
-    """Prüft, ob die gegebene Zelle in einem verbundenen Bereich liegt."""
+# Funktion zum Überspringen verbundener Zellen, wenn sie breiter als 4 Spalten sind
+def is_merged_cell_and_wide(ws, row, col, min_width=4):
+    """Prüft, ob die gegebene Zelle Teil eines verbundenen Bereichs ist und breiter als `min_width`."""
     for merged_range in ws.merged_cells.ranges:
         min_col, min_row, max_col, max_row = range_boundaries(str(merged_range))
         if min_row <= row <= max_row and min_col <= col <= max_col:
-            return True
+            if max_col - min_col + 1 > min_width:  # Breite des Bereichs prüfen
+                return True
     return False
 
 # Funktion, um den Bereich von "Adler" bis "Kleiber" zu finden
 def find_range(ws, start_name, end_name, column=2):  # Spalte B = 2
     start_row = None
     end_row = None
+    debug_values = []  # Zum Anzeigen aller Werte in Spalte B
     for row in range(1, ws.max_row + 1):
         value = ws.cell(row=row, column=column).value
+        debug_values.append(value)  # Alle Werte in Spalte B sammeln
         if value == start_name:
             start_row = row
         if value == end_name:
             end_row = row
         if start_row and end_row:
             break
-    return start_row, end_row
+    return start_row, end_row, debug_values
 
 # Extrahiere Daten zwischen "Adler" und "Kleiber"
 def extract_range_data(ws, start_name="Adler", end_name="Kleiber"):
-    start_row, end_row = find_range(ws, start_name, end_name)
+    start_row, end_row, debug_values = find_range(ws, start_name, end_name)
     if not start_row or not end_row:
-        raise ValueError(f"Bereich zwischen {start_name} und {end_name} wurde nicht gefunden.")
+        raise ValueError(
+            f"Bereich zwischen {start_name} und {end_name} wurde nicht gefunden. "
+            f"Gefundene Werte in Spalte B: {debug_values}"
+        )
 
     relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
     result = []
 
     # Iteriere durch den Bereich und überspringe verbundene Zellen
     for row in range(start_row, end_row + 1, 2):  # Nimm nur ungerade Zeilen für Namen
-        if is_merged_cell(ws, row, 2):  # Überspringe verbundene Zellen in Spalte B
+        if is_merged_cell_and_wide(ws, row, 2):  # Überspringe verbundene Zellen, wenn sie breiter als 4 Spalten sind
             continue
 
         lastname = ws.cell(row=row, column=2).value  # Nachname
@@ -87,7 +93,7 @@ if uploaded_file:
     # Extrahiere Daten im Bereich von "Adler" bis "Kleiber"
     try:
         extracted_data = extract_range_data(ws, start_name="Adler", end_name="Kleiber")
-        st.write("Inhalt der Tabelle:")
+        st.write("Gefundene Daten:")
         st.dataframe(extracted_data)
 
         # Exportiere die Daten als Excel-Datei
