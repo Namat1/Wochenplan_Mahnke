@@ -7,10 +7,10 @@ def extract_work_data(df):
     relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
     result = []
 
-    # Iteriere durch die Zeilen, bis der Nachname "Steckel" erreicht wird
-    for index, row in df.iterrows():
-        lastname = row["Nachname"]
-        firstname = row["Vorname"]
+    # Iteriere durch die Zeilen, beginnend bei B11, und überspringe jede zweite Zeile
+    for index in range(10, len(df), 2):  # 10 entspricht B11, da 0-basierter Index
+        lastname = df.iloc[index, 1]  # Spalte B = Index 1
+        firstname = df.iloc[index, 2]  # Spalte C = Index 2
 
         # Abbruchbedingung
         if lastname == "Steckel":
@@ -21,16 +21,16 @@ def extract_work_data(df):
             [("E", "F", "E2"), ("G", "H", "G2"), ("I", "J", "I2"),
              ("K", "L", "K2"), ("M", "N", "M2"), ("O", "P", "O2"), ("Q", "R", "Q2")]
         ):
-            activity_col1 = row.get(col1, "")
-            activity_col2 = row.get(col2, "")
+            activity_col1 = df.iloc[index + 1, ord(col1) - 65]  # Zeile darunter, Spalte berechnet
+            activity_col2 = df.iloc[index + 1, ord(col2) - 65]  # Zeile darunter, Spalte berechnet
             activity = f"{activity_col1} {activity_col2}".strip()
 
-            if any(word in activity for word in relevant_words):
+            if any(word in str(activity) for word in relevant_words):
                 result.append({
                     "Nachname": lastname,
                     "Vorname": firstname,
                     "Wochentag": ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day],
-                    "Datum": df.loc[1, date_col],
+                    "Datum": df.iloc[1, ord(date_col) - 65],  # Datum aus Zeile 2
                     "Tätigkeit": activity
                 })
 
@@ -44,10 +44,6 @@ def load_excel_without_formulas(file, sheet_name):
     # Lade die Daten aus dem Blatt in ein DataFrame
     data = pd.DataFrame(sheet.values)
 
-    # Die erste Zeile als Spaltennamen setzen
-    data.columns = data.iloc[0]
-    data = data[1:]
-
     return data
 
 # Streamlit App
@@ -57,10 +53,6 @@ uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
 if uploaded_file:
     # Lade die Excel-Datei ohne Formeln
     df = load_excel_without_formulas(uploaded_file, sheet_name="Druck Fahrer")
-
-    # Relevante Spalten umbenennen
-    df["Nachname"] = df["B"]
-    df["Vorname"] = df["C"]
 
     # Extrahiere die Daten
     data = extract_work_data(df)
