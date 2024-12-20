@@ -17,19 +17,29 @@ def extract_work_data(df):
         if activities_row >= len(df):  # Ende der Daten erreicht
             break
 
+        # Initialisiere Zeilen für die Ausgabe
+        row = {
+            "Nachname": lastname,
+            "Vorname": firstname,
+            "Sonntag": "",
+            "Montag": "",
+            "Dienstag": "",
+            "Mittwoch": "",
+            "Donnerstag": "",
+            "Freitag": "",
+            "Samstag": "",
+        }
+
+        # Iteriere durch die Wochentage
         for day, (activity_start_col, date_col) in enumerate(
             [(4, 4), (6, 6), (8, 8), (10, 10), (12, 12), (14, 14), (16, 16)]
         ):
             activity = df.iloc[activities_row, activity_start_col]
             if any(word in str(activity) for word in relevant_words):
-                result.append({
-                    "Nachname": lastname,
-                    "Vorname": firstname,
-                    "Wochentag": ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day],
-                    "Datum": df.iloc[1, date_col],
-                    "Tätigkeit": activity
-                })
+                weekday = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day]
+                row[weekday] = activity
 
+        result.append(row)
         row_index += 2  # Zwei Zeilen weiter
 
     return pd.DataFrame(result)
@@ -48,7 +58,6 @@ if uploaded_file:
     extracted_data = extract_work_data(data)
 
     # Debugging: Zeige die Daten
-    st.write("Typ von extracted_data:", type(extracted_data))
     st.write("Inhalt von extracted_data:")
     st.dataframe(extracted_data)
 
