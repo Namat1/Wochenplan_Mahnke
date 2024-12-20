@@ -9,6 +9,7 @@ from io import BytesIO
 # Funktion zum Extrahieren der relevanten Daten
 def extract_work_data(df):
     relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
+    excluded_words = ["Hoffahrer", "Waschteam", "Aushilfsfahrer"]
     result = []
 
     row_index = 10  # Start bei Zeile 11 (Index 10)
@@ -44,8 +45,9 @@ def extract_work_data(df):
             # Kombiniere beide Aktivitäten, falls sie nicht leer oder "0" sind
             activity = " ".join(filter(lambda x: x and x != "0", [activity1, activity2])).strip()
 
-            # Prüfen, ob eine der relevanten Aktivitäten in der Kombination vorkommt
-            if any(word in activity for word in relevant_words):
+            # Prüfen, ob eine der relevanten Aktivitäten vorkommt und keine der ausgeschlossenen Wörter enthalten ist
+            if (any(word in activity for word in relevant_words) and
+                not any(excluded in activity for excluded in excluded_words)):
                 weekday = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day]
                 row[weekday] = activity
 
