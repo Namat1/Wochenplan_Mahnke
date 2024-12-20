@@ -60,8 +60,8 @@ def extract_range_data(ws, end_name="Steckel"):
         lastname = ws.cell(row=row, column=2).value  # Nachname
         firstname = ws.cell(row=row, column=3).value  # Vorname
 
-        # Überspringe Mitarbeiter mit leerem Nachnamen
-        if not lastname or str(lastname).strip().lower() == "leer":
+        # Überspringe Mitarbeiter mit Nachnamen "Leer"
+        if str(lastname).strip().lower() == "leer":
             continue
 
         activities_row = row + 1  # Aktivitäten sind eine Zeile darunter
