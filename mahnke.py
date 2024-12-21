@@ -71,14 +71,15 @@ def extract_work_data_for_range(df, start_value, end_value):
 
 # Funktion zum Extrahieren der KW aus dem Dateinamen
 def extract_kw_from_filename(filename):
-    match = re.search(r"KW(\d{2})", filename, re.IGNORECASE)
+    match = re.search(r"KW(\\d{2})", filename, re.IGNORECASE)
     if match:
         return int(match.group(1))
     return None
 
 # Funktion, um die Tabelle optisch aufzubereiten
-def style_excel(ws, calendar_week):
+def style_excel(ws, calendar_week, num_new_rows, total_rows):
     header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")
+    alt_row_fill = PatternFill(start_color="FFFFF0AA", end_color="FFFFF0AA", fill_type="solid")
     title_fill = PatternFill(start_color="FF4682B4", end_color="FF4682B4", fill_type="solid")
     thin_border = Border(
         left=Side(style="thin"),
@@ -99,6 +100,13 @@ def style_excel(ws, calendar_week):
             cell.font = Font(bold=True, size=12)
             cell.fill = header_fill
             cell.border = thin_border
+
+    for row in range(4, ws.max_row + 1):
+        for cell in ws[row]:
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = thin_border
+            if row % 2 == 0:
+                cell.fill = alt_row_fill
 
 def adjust_column_width(ws):
     for col in ws.columns:
@@ -124,23 +132,33 @@ if uploaded_file:
     sheet = wb["Druck Fahrer"]
     data = pd.DataFrame(sheet.values)
 
+    # Erstelle neue Mitarbeiterdaten oberhalb des Bereichs
     new_data = pd.DataFrame([
-        {"Nachname": "Castensen", "Vorname": "Martin"},
-        {"Nachname": "Richter", "Vorname": "Clemens"}
+        {"Nachname": "Castensen", "Vorname": "Martin", "Sonntag": "", "Montag": "", "Dienstag": "", 
+         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""},
+        {"Nachname": "Richter", "Vorname": "Clemens", "Sonntag": "", "Montag": "", "Dienstag": "", 
+         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""}
     ])
 
-    extracted_data = pd.concat([new_data], ignore_index=True)
+    # Extrahiere die Daten für die Bereiche
+    extracted_data_1 = extract_work_data_for_range(data, "adler", "zosel")
+    extracted_data_2 = extract_work_data_for_range(data, "böhnke", "kleiber")
+    extracted_data_3 = extract_work_data_for_range(data, "linke", "steckel")
 
-    columns = ["Nachname", "Vorname"]
+    # Füge alle Daten zusammen
+    extracted_data = pd.concat([new_data, extracted_data_1, extracted_data_2, extracted_data_3], ignore_index=True)
+
+    columns = ["Nachname", "Vorname", "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
     extracted_data.columns = columns
 
+    # Excel-Dateiname mit Kalenderwoche erstellen
     excel_filename = f"Wochenbericht_Fuhrpark_KW{calendar_week:02d}.xlsx"
 
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
         ws = writer.sheets["Wochenübersicht"]
-        style_excel(ws, calendar_week)
+        style_excel(ws, calendar_week, len(new_data), len(extracted_data))
     excel_data = output.getvalue()
 
     st.download_button(
