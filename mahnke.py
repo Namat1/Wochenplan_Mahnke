@@ -138,7 +138,7 @@ if uploaded_file:
     columns = ["Nachname", "Vorname"]
     extracted_data.columns = columns
 
-    excel_filename = f"Wochenbericht_Fuhrpark_KW{calendar_week + 1:02d}.xlsx"
+    excel_filename = f"Wochenbericht_Fuhrpark_KW{calendar_week:02d}.xlsx"
 
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
