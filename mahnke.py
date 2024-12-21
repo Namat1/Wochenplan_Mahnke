@@ -5,6 +5,8 @@ from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 from datetime import datetime
 from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 # Hinweis an den Benutzer
 st.info("Die rot und grün gefärbten Zeilen müssen manuell eingetragen werden. Diese Zeilen dienen nur zur Markierung!")
@@ -83,84 +85,32 @@ def create_header_with_dates(df):
     ]
     return dates
 
-# Funktion, um die Tabelle optisch aufzubereiten
-def style_excel(ws, calendar_week, num_new_rows, total_rows):
-    # Farben und Stil für Header und Gitterlinien
-    header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")  # Hellblau für Header
-    alt_row_fill = PatternFill(start_color="FFFFF0AA", end_color="FFFFF0AA", fill_type="solid")  # Hellgelb für Zeilen
-    title_fill = PatternFill(start_color="FF4682B4", end_color="FF4682B4", fill_type="solid")  # Dunkelblau für KW/Abteilung
-    last_row_fill_odd = PatternFill(start_color="FF32CD32", end_color="FF32CD32", fill_type="solid")  # Grün für ungerade Zeilen
-    last_row_fill_even = PatternFill(start_color="FF98FB98", end_color="FF98FB98", fill_type="solid")  # Hellgrün für gerade Zeilen
-    new_row_fill_odd = PatternFill(start_color="FFFA8072", end_color="FFFA8072", fill_type="solid")  # Hellrot für ungerade Zeilen
-    new_row_fill_even = PatternFill(start_color="FFCD5C5C", end_color="FFCD5C5C", fill_type="solid")  # Rot für gerade Zeilen
-    thin_border = Border(
-        left=Side(style="thin"),
-        right=Side(style="thin"),
-        top=Side(style="thin"),
-        bottom=Side(style="thin")
-    )
+# Funktion zum Erstellen einer PDF-Datei mit ReportLab
+def generate_pdf(df, calendar_week, output_filename):
+    c = canvas.Canvas(output_filename, pagesize=letter)
+    width, height = letter
 
-    # KW-Eintrag oberhalb der Tabelle
-    ws["A1"].value = f"Kalenderwoche: {calendar_week + 1}"  # KW + 1
-    ws["A1"].font = Font(bold=True, size=16, color="FFFFFF")
-    ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
-    ws["A1"].fill = title_fill
-    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ws.max_column)
+    # Header hinzufügen
+    c.setFont("Helvetica", 14)
+    c.drawString(100, height - 40, f"Wochenbericht Fuhrpark Kalenderwoche {calendar_week}")
 
-    # Abteilung unterhalb der KW
-    ws["A2"].value = "Abteilung: Fuhrpark NFC"
-    ws["A2"].font = Font(bold=True, size=14, color="FFFFFF")
-    ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
-    ws["A2"].fill = title_fill
-    ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=ws.max_column)
+    # Tabelle erstellen
+    c.setFont("Helvetica", 10)
+    x = 100
+    y = height - 60
+    for column in df.columns:
+        c.drawString(x, y, column)
+        x += 100
 
-    # Header-Zeile fett, zentriert und farbig (nur die erste Zeile des Headers)
-    for col in ws.iter_cols(min_row=3, max_row=3, min_col=1, max_col=ws.max_column):
-        for cell in col:
-            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-            cell.font = Font(bold=True, size=12)
-            cell.fill = header_fill
-            cell.border = thin_border
+    y -= 20
+    for index, row in df.iterrows():
+        x = 100
+        for value in row:
+            c.drawString(x, y, str(value))
+            x += 100
+        y -= 20
 
-    # Datenzeilen formatieren (abwechselnd einfärben)
-    for row in range(4, ws.max_row + 1):
-        for cell in ws[row]:
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-            cell.border = thin_border
-            if row % 2 == 0:  # Jede zweite Zeile einfärben
-                cell.fill = alt_row_fill
-
-    # Formatierung für die letzten 6 Zeilen (abwechselnd grün und hellgrün)
-    for row in range(ws.max_row - 5, ws.max_row + 1):
-        for cell in ws[row]:
-            if (row - (ws.max_row - 5)) % 2 == 0:  # Ungerade Zeilen
-                cell.fill = last_row_fill_odd
-            else:  # Gerade Zeilen
-                cell.fill = last_row_fill_even
-
-    # Formatierung für die ersten 6 Zeilen (abwechselnd rot und hellrot)
-    for row in range(4, 4 + num_new_rows):
-        for cell in ws[row]:
-            if (row - 4) % 2 == 0:  # Ungerade Zeilen
-                cell.fill = new_row_fill_odd
-            else:  # Gerade Zeilen
-                cell.fill = new_row_fill_even
-
-    # Spaltenbreite anpassen
-    adjust_column_width(ws)
-
-    # Erste drei Zeilen fixieren
-    ws.freeze_panes = "A4"
-
-# Funktion, um die Spaltenbreite anzupassen
-def adjust_column_width(ws):
-    for col in ws.columns:
-        max_length = 0
-        col_letter = get_column_letter(col[0].column)
-        for cell in col:
-            if cell.value:
-                max_length = max(max_length, len(str(cell.value)))
-        ws.column_dimensions[col_letter].width = max_length + 2  # Padding für besseren Abstand
+    c.save()
 
 # Streamlit App
 st.title("Übersicht der Wochenarbeit")
@@ -213,18 +163,17 @@ if uploaded_file:
     )]
     extracted_data.columns = columns
 
-    # Daten als Excel-Datei exportieren
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
-        ws = writer.sheets["Wochenübersicht"]
-        style_excel(ws, calendar_week, len(new_data), len(extracted_data))  # Optische Anpassungen und KW-/Abteilungs-Eintrag
-    excel_data = output.getvalue()
+    # PDF-Dateiname mit Kalenderwoche erstellen
+    pdf_filename = f"Wochenbericht_Fuhrpark_KW{calendar_week:02d}.pdf"
+
+    # PDF generieren
+    generate_pdf(extracted_data, calendar_week, pdf_filename)
 
     # Download-Option
-    st.download_button(
-        label="Download als Excel",
-        data=excel_data,
-        file_name="Wochenübersicht.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    with open(pdf_filename, "rb") as f:
+        st.download_button(
+            label="Download als PDF",
+            data=f,
+            file_name=pdf_filename,
+            mime="application/pdf"
+        )
