@@ -108,7 +108,7 @@ def style_excel(ws, calendar_week, num_new_rows, total_rows):
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ws.max_column)
 
     # Abteilung unterhalb der KW
-    ws["A2"].value = "Abteilung: Fuhrpark NFC"
+    ws["A2"].value = "Abteilung: Fuhrpark - NFC"
     ws["A2"].font = Font(bold=True, size=14, color="FFFFFF")
     ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
     ws["A2"].fill = title_fill
@@ -214,7 +214,7 @@ if uploaded_file:
     extracted_data.columns = columns
 
     # Excel-Dateiname mit Kalenderwoche erstellen
-    excel_filename = f"Wochenbericht_Fuhrpark_KW.xlsx"
+    excel_filename = f"Kalenderwoche: {calendar_week + 1}".xlsx"
 
     # Daten als Excel-Datei exportieren
     output = BytesIO()
