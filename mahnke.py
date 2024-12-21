@@ -31,8 +31,6 @@ def extract_work_data_for_range(df, start_value, end_value):
         if not lastname or not firstname or lastname == "None" or firstname == "None":
             continue
 
-        activities_row = row_index + 1
-
         # Initialisiere Zeilen für die Ausgabe
         row = {
             "Nachname": lastname,
@@ -46,20 +44,12 @@ def extract_work_data_for_range(df, start_value, end_value):
             "Samstag": "",
         }
 
-        # Iteriere durch die Wochentage und prüfe beide Zellen (z. B. E und F für Sonntag)
-        for day, (col1, col2) in enumerate(
-            [(4, 5), (6, 7), (8, 9), (10, 11), (12, 13), (14, 15), (16, 17)]
-        ):
-            # Aktivität aus beiden Zellen auslesen
-            activity1 = str(df.iloc[activities_row, col1]).strip()
-            activity2 = str(df.iloc[activities_row, col2]).strip()
+        # Extrahiere Aktivitäten direkt aus der gleichen Zeile (wie der Nachname)
+        for day, col in enumerate([4, 6, 8, 10, 12, 14, 16]):  # Spalten für die Wochentage
+            activity = str(df.iloc[row_index, col]).strip()
 
-            # Kombiniere beide Aktivitäten, falls sie nicht leer oder "0" sind
-            activity = " ".join(filter(lambda x: x and x != "0", [activity1, activity2])).strip()
-
-            # Prüfen, ob eine der relevanten Aktivitäten vorkommt und keine der ausgeschlossenen Wörter enthalten ist
-            if (any(word in activity for word in relevant_words) and
-                not any(excluded in activity for excluded in excluded_words)):
+            # Prüfen, ob die Aktivität relevant ist und keine ausgeschlossenen Wörter enthält
+            if activity and any(word in activity for word in relevant_words) and not any(excluded in activity for excluded in excluded_words):
                 weekday = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day]
                 row[weekday] = activity
 
