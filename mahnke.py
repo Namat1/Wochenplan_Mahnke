@@ -155,17 +155,29 @@ if uploaded_file:
     sheet = wb["Druck Fahrer"]
     data = pd.DataFrame(sheet.values)
 
-    # Extrahiere die Daten für den ersten Bereich (Adler bis Zosel)
-    extracted_data_1 = extract_work_data_for_range(data, "adler", "zosel")
+    # Erstelle 6 Zeilen für die Mitarbeiter oberhalb von "Adler"
+    new_data = pd.DataFrame([{
+        "Nachname": "Castensen", "Vorname": "Martin", "Sonntag": "", "Montag": "", "Dienstag": "", 
+        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
+    }, {
+        "Nachname": "Richter", "Vorname": "Clemens", "Sonntag": "", "Montag": "", "Dienstag": "", 
+        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
+    }, {
+        "Nachname": "Gebauer", "Vorname": "Ronny", "Sonntag": "", "Montag": "", "Dienstag": "", 
+        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
+    }, {
+        "Nachname": "Pham Manh", "Vorname": "Chris", "Sonntag": "", "Montag": "", "Dienstag": "", 
+        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
+    }, {
+        "Nachname": "Ohlenroth", "Vorname": "Nadja", "Sonntag": "", "Montag": "", "Dienstag": "", 
+        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
+    }])
 
-    # Extrahiere die Daten für den zweiten Bereich (Böhnke bis Kleiber)
-    extracted_data_2 = extract_work_data_for_range(data, "böhnke", "kleiber")
+    # Extrahiere die Daten für den Bereich (Adler bis Zosel)
+    extracted_data = extract_work_data_for_range(data, "adler", "zosel")
 
-    # Extrahiere die Daten für den dritten Bereich (Linke bis Steckel)
-    extracted_data_3 = extract_work_data_for_range(data, "linke", "steckel")
-
-    # Kombiniere alle drei DataFrames
-    extracted_data = pd.concat([extracted_data_1, extracted_data_2, extracted_data_3], ignore_index=True)
+    # Füge die neuen Zeilen vor den extrahierten Daten hinzu
+    extracted_data = pd.concat([new_data, extracted_data], ignore_index=True)
 
     # Kalenderwoche berechnen
     dates = create_header_with_dates(data)
