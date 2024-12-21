@@ -89,6 +89,8 @@ def style_excel(ws, calendar_week, num_new_rows):
     last_row_fill = PatternFill(start_color="FF90EE90", end_color="FF90EE90", fill_type="solid")  # Hellgrün für die letzten 6 Zeilen
     new_row_fill_odd = PatternFill(start_color="FFFA8072", end_color="FFFA8072", fill_type="solid")  # Hellrot für ungerade Zeilen
     new_row_fill_even = PatternFill(start_color="FFCD5C5C", end_color="FFCD5C5C", fill_type="solid")  # Rot für gerade Zeilen
+    green_row_fill_odd = PatternFill(start_color="FF32CD32", end_color="FF32CD32", fill_type="solid")  # Grün für ungerade Zeilen
+    green_row_fill_even = PatternFill(start_color="FF98FB98", end_color="FF98FB98", fill_type="solid")  # Hellgrün für gerade Zeilen
     thin_border = Border(
         left=Side(style="thin"),
         right=Side(style="thin"),
@@ -129,15 +131,10 @@ def style_excel(ws, calendar_week, num_new_rows):
     # Letzte 6 Zeilen anders einfärben
     for row in range(ws.max_row - 5, ws.max_row + 1):
         for cell in ws[row]:
-            cell.fill = last_row_fill
-
-    # Neue Zeilen (die eingefügten Zeilen) abwechselnd einfärben
-    for row in range(4, 4 + num_new_rows):
-        for cell in ws[row]:
-            if (row - 4) % 2 == 0:  # Ungerade Zeilen
-                cell.fill = new_row_fill_odd
+            if (row - (ws.max_row - 5)) % 2 == 0:  # Ungerade Zeilen (beginnend mit der ersten neuen Zeile)
+                cell.fill = green_row_fill_odd
             else:  # Gerade Zeilen
-                cell.fill = new_row_fill_even
+                cell.fill = green_row_fill_even
 
     # Spaltenbreite anpassen
     adjust_column_width(ws)
