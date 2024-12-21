@@ -9,6 +9,9 @@ from io import BytesIO
 # Hinweis an den Benutzer
 st.info("Die rot und grün gefärbten Zeilen müssen manuell eingetragen werden. Dispo und Aushilfen!")
 
+# Neuer Titel
+st.title("Wochenarbeitsbericht Fuhrpark")  # Neuer Titel hier
+
 # Funktion zum Extrahieren der relevanten Daten für einen Bereich
 def extract_work_data_for_range(df, start_value, end_value):
     relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
