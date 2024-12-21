@@ -209,17 +209,14 @@ date_g2 = sheet["G2"].value
 if isinstance(date_g2, datetime):
     calendar_week = date_g2.isocalendar()[1]
 
+    # Excel-Dateiname mit Kalenderwoche erstellen
+    excel_filename = f"Wochenbericht_Fuhrpark_KW{calendar_week:02d}.xlsx"
+
     # Flache Spaltenüberschriften erstellen
     columns = ["Nachname", "Vorname"] + [f"{weekday} ({date})" for weekday, date in zip(
         ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"], dates
     )]
     extracted_data.columns = columns
-
-    # Excel-Dateiname mit Kalenderwoche erstellen
-    excel_filename = f"Wochenbericht_Fuhrpark_KW{calendar_week:02d}.xlsx"
-else:
-    st.error("Fehler: In Zelle G2 steht kein gültiges Datum.")
-    st.stop()
 
     # Daten als Excel-Datei exportieren
     output = BytesIO()
@@ -236,3 +233,6 @@ else:
         file_name=excel_filename,
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+else:
+    st.error("Fehler: In Zelle G2 steht kein gültiges Datum.")
+    st.stop()
