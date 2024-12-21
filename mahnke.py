@@ -155,8 +155,11 @@ if uploaded_file:
     # Extrahiere die Daten für den zweiten Bereich (Böhnke bis Kleiber)
     extracted_data_2 = extract_work_data_for_range(data, "böhnke", "kleiber")
 
-    # Kombiniere beide DataFrames
-    extracted_data = pd.concat([extracted_data_1, extracted_data_2], ignore_index=True)
+    # Extrahiere die Daten für den dritten Bereich (Linke bis Steckel)
+    extracted_data_3 = extract_work_data_for_range(data, "linke", "steckel")
+
+    # Kombiniere alle drei DataFrames
+    extracted_data = pd.concat([extracted_data_1, extracted_data_2, extracted_data_3], ignore_index=True)
 
     # Kalenderwoche berechnen
     dates = create_header_with_dates(data)
