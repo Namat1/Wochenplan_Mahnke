@@ -126,7 +126,7 @@ def style_excel(ws, calendar_week):
         # Überprüfe den Nachnamen in der ersten Spalte (A) für den Bereich "Linke" bis "Steckel"
         lastname = ws.cell(row=row, column=2).value  # Nachname in Spalte B
         if lastname and lastname.lower() in ["linke", "pekrul", "schulz", "schlutt", "stargard", "steckel"]:
-            # Färbe den Hintergrund dieser Zeilen in hellblau oder dunkelblau
+            # Färbe den Hintergrund dieser Zeilen in hellblau
             for cell in ws[row]:
                 cell.fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")  # Hellblau für die Zeile
 
