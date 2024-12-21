@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import re
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
@@ -10,16 +9,28 @@ from io import BytesIO
 # Hinweis an den Benutzer
 st.info("Die rot und grün gefärbten Zeilen müssen manuell eingetragen werden. Dispo und Aushilfen!")
 
+# Funktion zum Extrahieren der Kalenderwoche aus dem Dateinamen
+def extract_calendar_week(filename):
+    import re
+    match = re.search(r'KW(\d{2})', filename)
+    if match:
+        return int(match.group(1))
+    else:
+        st.error("Keine Kalenderwoche im Dateinamen gefunden!")
+        st.stop()
+
+# Funktion zum Überspringen von Zeilen mit "Leer"
+def filter_rows(df):
+    return df[~df[['Nachname', 'Vorname']].apply(lambda x: x.str.contains("Leer", na=False, case=False)).any(axis=1)]
+
 # Funktion zum Extrahieren der relevanten Daten für einen Bereich
 def extract_work_data_for_range(df, start_value, end_value):
     relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
     excluded_words = ["Hoffahrer", "Waschteam", "Aushilfsfahrer"]
     result = []
 
-    # Bereinige Spalte B (zweite Spalte) von Leerzeichen und setze alles in Kleinbuchstaben
     df.iloc[:, 1] = df.iloc[:, 1].astype(str).str.strip().str.lower()
 
-    # Prüfe, ob der Bereich existiert
     if start_value not in df.iloc[:, 1].values or end_value not in df.iloc[:, 1].values:
         st.error(f"Die Werte '{start_value}' oder '{end_value}' wurden in Spalte B nicht gefunden.")
         st.stop()
@@ -31,16 +42,10 @@ def extract_work_data_for_range(df, start_value, end_value):
         lastname = str(df.iloc[row_index, 1]).strip().title()
         firstname = str(df.iloc[row_index, 2]).strip().title()
 
-        # Überspringe Zeilen, bei denen Vorname oder Nachname "Leer" ist
-        if lastname == "Leer" or firstname == "Leer":
-            continue
-
-        # Überspringe Zeilen, bei denen Nachname oder Vorname fehlt oder 'None' ist
         if not lastname or not firstname or lastname == "None" or firstname == "None":
             continue
 
         activities_row = row_index + 1
-
         row = {
             "Nachname": lastname,
             "Vorname": firstname,
@@ -58,6 +63,7 @@ def extract_work_data_for_range(df, start_value, end_value):
         ):
             activity1 = str(df.iloc[activities_row, col1]).strip()
             activity2 = str(df.iloc[activities_row, col2]).strip()
+
             activity = " ".join(filter(lambda x: x and x != "0", [activity1, activity2])).strip()
 
             if (any(word in activity for word in relevant_words) and
@@ -69,98 +75,42 @@ def extract_work_data_for_range(df, start_value, end_value):
 
     return pd.DataFrame(result)
 
-# Funktion zum Extrahieren der KW aus dem Dateinamen
-def extract_kw_from_filename(filename):
-    match = re.search(r"KW(\\d{2})", filename, re.IGNORECASE)
-    if match:
-        return int(match.group(1))
-    return None
-
-# Funktion, um die Tabelle optisch aufzubereiten
-def style_excel(ws, calendar_week, num_new_rows, total_rows):
-    header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")
-    alt_row_fill = PatternFill(start_color="FFFFF0AA", end_color="FFFFF0AA", fill_type="solid")
-    title_fill = PatternFill(start_color="FF4682B4", end_color="FF4682B4", fill_type="solid")
-    thin_border = Border(
-        left=Side(style="thin"),
-        right=Side(style="thin"),
-        top=Side(style="thin"),
-        bottom=Side(style="thin")
-    )
-
-    ws["A1"].value = f"Kalenderwoche: {calendar_week}"
-    ws["A1"].font = Font(bold=True, size=16, color="FFFFFF")
-    ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
-    ws["A1"].fill = title_fill
-    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ws.max_column)
-
-    for col in ws.iter_cols(min_row=3, max_row=3, min_col=1, max_col=ws.max_column):
-        for cell in col:
-            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-            cell.font = Font(bold=True, size=12)
-            cell.fill = header_fill
-            cell.border = thin_border
-
-    for row in range(4, ws.max_row + 1):
-        for cell in ws[row]:
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-            cell.border = thin_border
-            if row % 2 == 0:
-                cell.fill = alt_row_fill
-
-def adjust_column_width(ws):
-    for col in ws.columns:
-        max_length = 0
-        col_letter = get_column_letter(col[0].column)
-        for cell in col:
-            if cell.value:
-                max_length = max(max_length, len(str(cell.value)))
-        ws.column_dimensions[col_letter].width = max_length + 2
-
 # Streamlit App
 st.title("Wochenarbeitsbericht Fuhrpark")
 uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
 
 if uploaded_file:
-    file_name = uploaded_file.name  # Name der hochgeladenen Datei
-    calendar_week = extract_kw_from_filename(file_name)
-    if calendar_week is None:
-        st.error("Die Kalenderwoche konnte nicht aus dem Dateinamen extrahiert werden. Bitte Dateinamen prüfen.")
-        st.stop()
+    # Extrahiere Kalenderwoche aus dem Dateinamen
+    calendar_week = extract_calendar_week(uploaded_file.name)
 
+    # Lade die Excel-Datei
     wb = load_workbook(uploaded_file, data_only=True)
     sheet = wb["Druck Fahrer"]
     data = pd.DataFrame(sheet.values)
 
-    # Erstelle neue Mitarbeiterdaten oberhalb des Bereichs
-    new_data = pd.DataFrame([
-        {"Nachname": "Castensen", "Vorname": "Martin", "Sonntag": "", "Montag": "", "Dienstag": "", 
-         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""},
-        {"Nachname": "Richter", "Vorname": "Clemens", "Sonntag": "", "Montag": "", "Dienstag": "", 
-         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""}
-    ])
+    # Filtere Zeilen mit "Leer"
+    data.columns = ["Spalte1", "Nachname", "Vorname"] + [f"Spalte{i}" for i in range(4, len(data.columns) + 1)]
+    data = filter_rows(data)
 
-    # Extrahiere die Daten für die Bereiche
-    extracted_data_1 = extract_work_data_for_range(data, "adler", "zosel")
-    extracted_data_2 = extract_work_data_for_range(data, "böhnke", "kleiber")
-    extracted_data_3 = extract_work_data_for_range(data, "linke", "steckel")
+    # Extrahiere die Datenbereiche
+    extracted_data = pd.concat([
+        extract_work_data_for_range(data, "adler", "zosel"),
+        extract_work_data_for_range(data, "böhnke", "kleiber"),
+        extract_work_data_for_range(data, "linke", "steckel")
+    ], ignore_index=True)
 
-    # Füge alle Daten zusammen
-    extracted_data = pd.concat([new_data, extracted_data_1, extracted_data_2, extracted_data_3], ignore_index=True)
-
-    columns = ["Nachname", "Vorname", "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
-    extracted_data.columns = columns
-
-    # Excel-Dateiname mit Kalenderwoche erstellen
+    # Erstelle den Dateinamen mit Kalenderwoche
     excel_filename = f"Wochenbericht_Fuhrpark_KW{calendar_week:02d}.xlsx"
 
+    # Daten als Excel-Datei exportieren
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
         ws = writer.sheets["Wochenübersicht"]
-        style_excel(ws, calendar_week, len(new_data), len(extracted_data))
+        ws["A1"] = f"Kalenderwoche: {calendar_week}"
     excel_data = output.getvalue()
 
+    # Download-Option
     st.download_button(
         label="Download als Excel",
         data=excel_data,
