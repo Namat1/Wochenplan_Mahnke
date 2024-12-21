@@ -123,10 +123,10 @@ def style_excel(ws, calendar_week):
             if row % 2 == 0:  # Jede zweite Zeile einfärben
                 cell.fill = alt_row_fill
 
-        # **Überprüfe nur die relevanten Zeilen:**
-        lastname = ws.cell(row=row, column=2).value  # Nachname in Spalte B
+        # Überprüfe die Nachnamen in Spalte A (Index 1)
+        lastname = ws.cell(row=row, column=1).value  # Nachname in Spalte A
         if lastname and lastname.lower() in ["linke", "pekrul", "schulz", "schlutt", "stargard", "steckel"]:
-            # Färbe **Spalte A und B** in hellblau für diese Zeilen
+            # Färbe die Spalten A und B in hellblau
             ws.cell(row=row, column=1).fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")  # Hellblau für Spalte A
             ws.cell(row=row, column=2).fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")  # Hellblau für Spalte B
 
