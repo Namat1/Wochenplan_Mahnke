@@ -123,6 +123,11 @@ def style_excel(ws, calendar_week):
             if row % 2 == 0:  # Jede zweite Zeile einfärben
                 cell.fill = alt_row_fill
 
+            # Überprüfe den Nachnamen in der ersten Spalte (A) für den Bereich "Linke" bis "Steckel"
+            lastname = ws.cell(row=row, column=2).value  # Annahme: Nachname ist in Spalte B
+            if lastname and "linke" <= lastname.lower() <= "steckel":
+                cell.font = Font(color="FF0000")  # Rote Schrift für diesen Bereich
+
     # Spaltenbreite anpassen
     adjust_column_width(ws)
 
