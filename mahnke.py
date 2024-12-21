@@ -126,7 +126,7 @@ def style_excel(ws, calendar_week):
         # **Überprüfen Sie nur die letzten sechs Zeilen**
         lastname = ws.cell(row=row, column=2).value  # Nachname in Spalte B
         # Nur die letzten sechs Zeilen (Linke bis Steckel) bekommen die hellblaue Farbe
-        if lastname and lastname.lower() in ["Erich", "Olaf", "Stephan", "Hubert", "Sebastian", "Wolfgang"]:
+        if lastname and lastname.lower() in ["erich", "olaf", "stephan", "hubert", "sebastian", "wolfgang"]:
             # Färbe den Hintergrund dieser Zeilen in hellblau
             for cell in ws[row]:
                 cell.fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")  # Hellblau für die Zeile
