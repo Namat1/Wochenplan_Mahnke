@@ -16,8 +16,10 @@ def extract_work_data_for_range(df, start_value, end_value):
     excluded_words = ["Hoffahrer", "Waschteam", "Aushilfsfahrer"]
     result = []
 
+    # Bereinige Spalte B (zweite Spalte) von Leerzeichen und setze alles in Kleinbuchstaben
     df.iloc[:, 1] = df.iloc[:, 1].astype(str).str.strip().str.lower()
 
+    # Prüfe, ob der Bereich existiert
     if start_value not in df.iloc[:, 1].values or end_value not in df.iloc[:, 1].values:
         st.error(f"Die Werte '{start_value}' oder '{end_value}' wurden in Spalte B nicht gefunden.")
         st.stop()
@@ -29,9 +31,11 @@ def extract_work_data_for_range(df, start_value, end_value):
         lastname = str(df.iloc[row_index, 1]).strip().title()
         firstname = str(df.iloc[row_index, 2]).strip().title()
 
+        # Überspringe Zeilen, bei denen Vorname oder Nachname "Leer" ist
         if lastname == "Leer" or firstname == "Leer":
             continue
 
+        # Überspringe Zeilen, bei denen Nachname oder Vorname fehlt oder 'None' ist
         if not lastname or not firstname or lastname == "None" or firstname == "None":
             continue
 
@@ -73,9 +77,8 @@ def extract_kw_from_filename(filename):
     return None
 
 # Funktion, um die Tabelle optisch aufzubereiten
-def style_excel(ws, calendar_week, num_new_rows, total_rows):
+def style_excel(ws, calendar_week):
     header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")
-    alt_row_fill = PatternFill(start_color="FFFFF0AA", end_color="FFFFF0AA", fill_type="solid")
     title_fill = PatternFill(start_color="FF4682B4", end_color="FF4682B4", fill_type="solid")
     thin_border = Border(
         left=Side(style="thin"),
@@ -96,13 +99,6 @@ def style_excel(ws, calendar_week, num_new_rows, total_rows):
             cell.font = Font(bold=True, size=12)
             cell.fill = header_fill
             cell.border = thin_border
-
-    for row in range(4, ws.max_row + 1):
-        for cell in ws[row]:
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-            cell.border = thin_border
-            if row % 2 == 0:
-                cell.fill = alt_row_fill
 
 def adjust_column_width(ws):
     for col in ws.columns:
@@ -144,7 +140,7 @@ if uploaded_file:
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
         ws = writer.sheets["Wochenübersicht"]
-        style_excel(ws, calendar_week, len(new_data), len(extracted_data))
+        style_excel(ws, calendar_week)
     excel_data = output.getvalue()
 
     st.download_button(
