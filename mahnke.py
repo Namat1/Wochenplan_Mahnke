@@ -86,6 +86,7 @@ def style_excel(ws, calendar_week):
     header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")  # Hellblau für Header
     alt_row_fill = PatternFill(start_color="FFFFF0AA", end_color="FFFFF0AA", fill_type="solid")  # Hellgelb für Zeilen
     title_fill = PatternFill(start_color="FF4682B4", end_color="FF4682B4", fill_type="solid")  # Dunkelblau für KW/Abteilung
+    last_row_fill = PatternFill(start_color="FF90EE90", end_color="FF90EE90", fill_type="solid")  # Hellgrün für die letzten 6 Zeilen
     thin_border = Border(
         left=Side(style="thin"),
         right=Side(style="thin"),
@@ -122,6 +123,11 @@ def style_excel(ws, calendar_week):
             cell.border = thin_border
             if row % 2 == 0:  # Jede zweite Zeile einfärben
                 cell.fill = alt_row_fill
+
+    # Letzte 6 Zeilen anders einfärben
+    for row in range(ws.max_row - 5, ws.max_row + 1):
+        for cell in ws[row]:
+            cell.fill = last_row_fill
 
     # Spaltenbreite anpassen
     adjust_column_width(ws)
