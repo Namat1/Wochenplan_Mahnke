@@ -6,8 +6,8 @@ from openpyxl.utils import get_column_letter
 from datetime import datetime
 from io import BytesIO
 
-# Funktion zum Extrahieren der relevanten Daten
-def extract_work_data(df):
+# Funktion zum Extrahieren der relevanten Daten für einen Bereich
+def extract_work_data_for_range(df, start_value, end_value):
     relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
     excluded_words = ["Hoffahrer", "Waschteam", "Aushilfsfahrer"]
     result = []
@@ -15,31 +15,15 @@ def extract_work_data(df):
     # Bereinige Spalte B (zweite Spalte) von Leerzeichen und setze alles in Kleinbuchstaben
     df.iloc[:, 1] = df.iloc[:, 1].astype(str).str.strip().str.lower()
 
-    # Prüfe, ob "adler" und "zosel" existieren
-    if "adler" not in df.iloc[:, 1].values or "zosel" not in df.iloc[:, 1].values:
-        st.error("Die Werte 'Adler' oder 'Zosel' wurden in Spalte B nicht gefunden.")
+    # Prüfe, ob der Bereich existiert
+    if start_value not in df.iloc[:, 1].values or end_value not in df.iloc[:, 1].values:
+        st.error(f"Die Werte '{start_value}' oder '{end_value}' wurden in Spalte B nicht gefunden.")
         st.stop()  # Beendet die Ausführung
 
-    # Bereich 1: Von "Adler" bis "Zosel"
-    start_index_1 = df[df.iloc[:, 1] == "adler"].index[0]
-    end_index_1 = df[df.iloc[:, 1] == "zosel"].index[0]
+    start_index = df[df.iloc[:, 1] == start_value].index[0]
+    end_index = df[df.iloc[:, 1] == end_value].index[0]
 
-    # Bereich 2: Von "Böhnke" bis "Kleiber"
-    if "böhnke" not in df.iloc[:, 1].values or "kleiber" not in df.iloc[:, 1].values:
-        st.error("Die Werte 'Böhnke' oder 'Kleiber' wurden in Spalte B nicht gefunden.")
-        st.stop()  # Beendet die Ausführung
-
-    start_index_2 = df[df.iloc[:, 1] == "böhnke"].index[0]
-    end_index_2 = df[df.iloc[:, 1] == "kleiber"].index[0]
-
-    # Verarbeite beide Bereiche
-    all_rows = []
-    for row_index in range(start_index_1, end_index_1 + 1):
-        all_rows.append(row_index)
-    for row_index in range(start_index_2, end_index_2 + 1):
-        all_rows.append(row_index)
-
-    for row_index in all_rows:
+    for row_index in range(start_index, end_index + 1):
         lastname = str(df.iloc[row_index, 1]).strip().title()  # Spalte B
         firstname = str(df.iloc[row_index, 2]).strip().title()  # Spalte C
 
@@ -165,11 +149,17 @@ if uploaded_file:
     sheet = wb["Druck Fahrer"]
     data = pd.DataFrame(sheet.values)
 
-    # Extrahiere die Daten und das Datum
-    extracted_data = extract_work_data(data)
-    dates = create_header_with_dates(data)
+    # Extrahiere die Daten für den ersten Bereich (Adler bis Zosel)
+    extracted_data_1 = extract_work_data_for_range(data, "adler", "zosel")
+
+    # Extrahiere die Daten für den zweiten Bereich (Böhnke bis Kleiber)
+    extracted_data_2 = extract_work_data_for_range(data, "böhnke", "kleiber")
+
+    # Kombiniere beide DataFrames
+    extracted_data = pd.concat([extracted_data_1, extracted_data_2], ignore_index=True)
 
     # Kalenderwoche berechnen
+    dates = create_header_with_dates(data)
     first_date = pd.to_datetime(dates[0], format='%d.%m.%Y')
     calendar_week = first_date.isocalendar()[1]
 
