@@ -81,16 +81,15 @@ def create_header_with_dates(df):
     return dates
 
 # Funktion, um die Tabelle optisch aufzubereiten
-def style_excel(ws, calendar_week, num_new_rows):
+def style_excel(ws, calendar_week, num_new_rows, total_rows):
     # Farben und Stil für Header und Gitterlinien
     header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")  # Hellblau für Header
     alt_row_fill = PatternFill(start_color="FFFFF0AA", end_color="FFFFF0AA", fill_type="solid")  # Hellgelb für Zeilen
     title_fill = PatternFill(start_color="FF4682B4", end_color="FF4682B4", fill_type="solid")  # Dunkelblau für KW/Abteilung
-    last_row_fill = PatternFill(start_color="FF90EE90", end_color="FF90EE90", fill_type="solid")  # Hellgrün für die letzten 6 Zeilen
+    last_row_fill_odd = PatternFill(start_color="FF32CD32", end_color="FF32CD32", fill_type="solid")  # Grün für ungerade Zeilen
+    last_row_fill_even = PatternFill(start_color="FF98FB98", end_color="FF98FB98", fill_type="solid")  # Hellgrün für gerade Zeilen
     new_row_fill_odd = PatternFill(start_color="FFFA8072", end_color="FFFA8072", fill_type="solid")  # Hellrot für ungerade Zeilen
     new_row_fill_even = PatternFill(start_color="FFCD5C5C", end_color="FFCD5C5C", fill_type="solid")  # Rot für gerade Zeilen
-    green_row_fill_odd = PatternFill(start_color="FF32CD32", end_color="FF32CD32", fill_type="solid")  # Grün für ungerade Zeilen
-    green_row_fill_even = PatternFill(start_color="FF98FB98", end_color="FF98FB98", fill_type="solid")  # Hellgrün für gerade Zeilen
     thin_border = Border(
         left=Side(style="thin"),
         right=Side(style="thin"),
@@ -128,13 +127,21 @@ def style_excel(ws, calendar_week, num_new_rows):
             if row % 2 == 0:  # Jede zweite Zeile einfärben
                 cell.fill = alt_row_fill
 
-    # Letzte 6 Zeilen anders einfärben
+    # Formatierung für die letzten 6 Zeilen (abwechselnd grün und hellgrün)
     for row in range(ws.max_row - 5, ws.max_row + 1):
         for cell in ws[row]:
-            if (row - (ws.max_row - 5)) % 2 == 0:  # Ungerade Zeilen (beginnend mit der ersten neuen Zeile)
-                cell.fill = green_row_fill_odd
+            if (row - (ws.max_row - 5)) % 2 == 0:  # Ungerade Zeilen
+                cell.fill = last_row_fill_odd
             else:  # Gerade Zeilen
-                cell.fill = green_row_fill_even
+                cell.fill = last_row_fill_even
+
+    # Formatierung für die ersten 6 Zeilen (abwechselnd rot und hellrot)
+    for row in range(4, 4 + num_new_rows):
+        for cell in ws[row]:
+            if (row - 4) % 2 == 0:  # Ungerade Zeilen
+                cell.fill = new_row_fill_odd
+            else:  # Gerade Zeilen
+                cell.fill = new_row_fill_even
 
     # Spaltenbreite anpassen
     adjust_column_width(ws)
@@ -208,7 +215,7 @@ if uploaded_file:
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
         ws = writer.sheets["Wochenübersicht"]
-        style_excel(ws, calendar_week, len(new_data))  # Optische Anpassungen und KW-/Abteilungs-Eintrag
+        style_excel(ws, calendar_week, len(new_data), len(extracted_data))  # Optische Anpassungen und KW-/Abteilungs-Eintrag
     excel_data = output.getvalue()
 
     # Download-Option
