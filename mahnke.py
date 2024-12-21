@@ -9,9 +9,6 @@ from io import BytesIO
 # Hinweis an den Benutzer
 st.info("Die rot und grün gefärbten Zeilen müssen manuell eingetragen werden. Dispo und Aushilfen!")
 
-# Neuer Titel
-st.title("Wochenarbeitsbericht Fuhrpark")  # Neuer Titel hier
-
 # Funktion zum Extrahieren der relevanten Daten für einen Bereich
 def extract_work_data_for_range(df, start_value, end_value):
     relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
@@ -166,7 +163,7 @@ def adjust_column_width(ws):
         ws.column_dimensions[col_letter].width = max_length + 2  # Padding für besseren Abstand
 
 # Streamlit App
-st.title("Übersicht der Wochenarbeit")
+st.title("Wochenarbeitsbericht Fuhrpark")
 uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
 
 if uploaded_file:
