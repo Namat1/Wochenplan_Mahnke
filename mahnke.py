@@ -191,16 +191,15 @@ if uploaded_file:
     }])
 
     # Extrahiere die Daten für den Bereich (Adler bis Zosel)
-    extracted_data_1 = extract_work_data_for_range(data, "adler", "zosel")
+    extracted_data_1 = extract_work_data_for_range(data, "adler", "kleiber")
 
-    # Extrahiere die Daten für den Bereich (Böhnke bis Kleiber)
-    extracted_data_2 = extract_work_data_for_range(data, "böhnke", "kleiber")
+    
 
     # Extrahiere die Daten für den Bereich (Linke bis Steckel)
     extracted_data_3 = extract_work_data_for_range(data, "linke", "steckel")
 
     # Füge alle Daten zusammen
-    extracted_data = pd.concat([new_data, extracted_data_1, extracted_data_2, extracted_data_3], ignore_index=True)
+    extracted_data = pd.concat([new_data, extracted_data_1, extracted_data_3], ignore_index=True)
 
     # Kalenderwoche berechnen
     dates = create_header_with_dates(data)
