@@ -89,14 +89,9 @@ def create_header_with_dates(df):
 
 # Funktion, um die Tabelle optisch aufzubereiten
 def style_excel(ws, calendar_week, num_new_rows, total_rows):
-    # Farben und Stil für Header und Gitterlinien
-    header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")  # Hellblau für Header
-    alt_row_fill = PatternFill(start_color="FFFFF0AA", end_color="FFFFF0AA", fill_type="solid")  # Hellgelb für Zeilen
-    title_fill = PatternFill(start_color="FF4682B4", end_color="FF4682B4", fill_type="solid")  # Dunkelblau für KW/Abteilung
-    last_row_fill_odd = PatternFill(start_color="FF32CD32", end_color="FF32CD32", fill_type="solid")  # Grün für ungerade Zeilen
-    last_row_fill_even = PatternFill(start_color="FF98FB98", end_color="FF98FB98", fill_type="solid")  # Hellgrün für gerade Zeilen
-    new_row_fill_odd = PatternFill(start_color="FFFA8072", end_color="FFFA8072", fill_type="solid")  # Hellrot für ungerade Zeilen
-    new_row_fill_even = PatternFill(start_color="FFCD5C5C", end_color="FFCD5C5C", fill_type="solid")  # Rot für gerade Zeilen
+    header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")
+    alt_row_fill = PatternFill(start_color="FFFFF0AA", end_color="FFFFF0AA", fill_type="solid")
+    title_fill = PatternFill(start_color="FF4682B4", end_color="FF4682B4", fill_type="solid")
     thin_border = Border(
         left=Side(style="thin"),
         right=Side(style="thin"),
@@ -104,21 +99,12 @@ def style_excel(ws, calendar_week, num_new_rows, total_rows):
         bottom=Side(style="thin")
     )
 
-    # KW-Eintrag oberhalb der Tabelle
-    ws["A1"].value = f"Kalenderwoche: {calendar_week + 1}"  # KW + 1
+    ws["A1"].value = f"Kalenderwoche: {calendar_week + 1}"
     ws["A1"].font = Font(bold=True, size=16, color="FFFFFF")
     ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
     ws["A1"].fill = title_fill
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ws.max_column)
 
-    # Abteilung unterhalb der KW
-    ws["A2"].value = "Abteilung: Fuhrpark NFC"
-    ws["A2"].font = Font(bold=True, size=14, color="FFFFFF")
-    ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
-    ws["A2"].fill = title_fill
-    ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=ws.max_column)
-
-    # Header-Zeile fett, zentriert und farbig (nur die erste Zeile des Headers)
     for col in ws.iter_cols(min_row=3, max_row=3, min_col=1, max_col=ws.max_column):
         for cell in col:
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -126,37 +112,13 @@ def style_excel(ws, calendar_week, num_new_rows, total_rows):
             cell.fill = header_fill
             cell.border = thin_border
 
-    # Datenzeilen formatieren (abwechselnd einfärben)
     for row in range(4, ws.max_row + 1):
         for cell in ws[row]:
             cell.alignment = Alignment(horizontal="center", vertical="center")
             cell.border = thin_border
-            if row % 2 == 0:  # Jede zweite Zeile einfärben
+            if row % 2 == 0:
                 cell.fill = alt_row_fill
 
-    # Formatierung für die letzten 6 Zeilen (abwechselnd grün und hellgrün)
-    for row in range(ws.max_row - 5, ws.max_row + 1):
-        for cell in ws[row]:
-            if (row - (ws.max_row - 5)) % 2 == 0:  # Ungerade Zeilen
-                cell.fill = last_row_fill_odd
-            else:  # Gerade Zeilen
-                cell.fill = last_row_fill_even
-
-    # Formatierung für die ersten 6 Zeilen (abwechselnd rot und hellrot)
-    for row in range(4, 4 + num_new_rows):
-        for cell in ws[row]:
-            if (row - 4) % 2 == 0:  # Ungerade Zeilen
-                cell.fill = new_row_fill_odd
-            else:  # Gerade Zeilen
-                cell.fill = new_row_fill_even
-
-    # Spaltenbreite anpassen
-    adjust_column_width(ws)
-
-    # Erste drei Zeilen fixieren
-    ws.freeze_panes = "A4"
-
-# Funktion, um die Spaltenbreite anzupassen
 def adjust_column_width(ws):
     for col in ws.columns:
         max_length = 0
@@ -164,71 +126,40 @@ def adjust_column_width(ws):
         for cell in col:
             if cell.value:
                 max_length = max(max_length, len(str(cell.value)))
-        ws.column_dimensions[col_letter].width = max_length + 2  # Padding für besseren Abstand
+        ws.column_dimensions[col_letter].width = max_length + 2
 
 # Streamlit App
 st.title("Wochenarbeitsbericht Fuhrpark")
 uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
 
 if uploaded_file:
-    # Lade die Excel-Datei
     wb = load_workbook(uploaded_file, data_only=True)
     sheet = wb["Druck Fahrer"]
     data = pd.DataFrame(sheet.values)
 
-    # Erstelle 6 Zeilen für die Mitarbeiter oberhalb von "Adler"
-    new_data = pd.DataFrame([{
-        "Nachname": "Castensen", "Vorname": "Martin", "Sonntag": "", "Montag": "", "Dienstag": "", 
-        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
-    }, {
-        "Nachname": "Richter", "Vorname": "Clemens", "Sonntag": "", "Montag": "", "Dienstag": "", 
-        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
-    }, {
-        "Nachname": "Gebauer", "Vorname": "Ronny", "Sonntag": "", "Montag": "", "Dienstag": "", 
-        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
-    }, {
-        "Nachname": "Pham Manh", "Vorname": "Chris", "Sonntag": "", "Montag": "", "Dienstag": "", 
-        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
-    }, {
-        "Nachname": "Ohlenroth", "Vorname": "Nadja", "Sonntag": "", "Montag": "", "Dienstag": "", 
-        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
-    }])
+    new_data = pd.DataFrame([
+        {"Nachname": "Castensen", "Vorname": "Martin"},
+        {"Nachname": "Richter", "Vorname": "Clemens"}
+    ])
 
-    # Extrahiere die Daten für den Bereich (Adler bis Zosel)
-    extracted_data_1 = extract_work_data_for_range(data, "adler", "zosel")
+    extracted_data = pd.concat([new_data], ignore_index=True)
 
-    # Extrahiere die Daten für den Bereich (Böhnke bis Kleiber)
-    extracted_data_2 = extract_work_data_for_range(data, "böhnke", "kleiber")
-
-    # Extrahiere die Daten für den Bereich (Linke bis Steckel)
-    extracted_data_3 = extract_work_data_for_range(data, "linke", "steckel")
-
-    # Füge alle Daten zusammen
-    extracted_data = pd.concat([new_data, extracted_data_1, extracted_data_2, extracted_data_3], ignore_index=True)
-
-    # Kalenderwoche berechnen
     dates = create_header_with_dates(data)
     first_date = pd.to_datetime(dates[0], format='%d.%m.%Y')
     calendar_week = first_date.isocalendar()[1]
 
-    # Flache Spaltenüberschriften erstellen
-    columns = ["Nachname", "Vorname"] + [f"{weekday} ({date})" for weekday, date in zip(
-        ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"], dates
-    )]
+    columns = ["Nachname", "Vorname"]
     extracted_data.columns = columns
 
-    # Excel-Dateiname mit Kalenderwoche erstellen
-    excel_filename = f"Wochenbericht_Fuhrpark_KW{calendar_week:02d}.xlsx"
+    excel_filename = f"Wochenbericht_Fuhrpark_KW{calendar_week + 1:02d}.xlsx"
 
-    # Daten als Excel-Datei exportieren
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
         ws = writer.sheets["Wochenübersicht"]
-        style_excel(ws, calendar_week, len(new_data), len(extracted_data))  # Optische Anpassungen und KW-/Abteilungs-Eintrag
+        style_excel(ws, calendar_week, len(new_data), len(extracted_data))
     excel_data = output.getvalue()
 
-    # Download-Option
     st.download_button(
         label="Download als Excel",
         data=excel_data,
