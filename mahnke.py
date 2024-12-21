@@ -169,8 +169,30 @@ uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
 if uploaded_file:
     # Lade die Excel-Datei
     wb = load_workbook(uploaded_file, data_only=True)
-    sheet = wb["Druck Fahrer"]
-    data = pd.DataFrame(sheet.values)
+    
+    # Zugriff auf das Arbeitsblatt "Druck Fahrer"
+    try:
+        sheet = wb["Druck Fahrer"]
+    except KeyError:
+        st.error("Das Arbeitsblatt 'Druck Fahrer' wurde in der hochgeladenen Datei nicht gefunden.")
+        st.stop()
+
+    # Datum aus Zelle G2 lesen
+    date_g2 = sheet["G2"].value
+
+    # Überprüfen, ob das Datum gültig ist
+    if isinstance(date_g2, datetime):
+        calendar_week = date_g2.isocalendar()[1]
+
+        # Excel-Dateiname mit Kalenderwoche erstellen
+        excel_filename = f"Wochenbericht_Fuhrpark_KW{calendar_week:02d}.xlsx"
+
+        # Weitere Verarbeitung und Export
+        ...
+    else:
+        st.error("Fehler: In Zelle G2 steht kein gültiges Datum.")
+        st.stop()
+
 
     # Erstelle 6 Zeilen für die Mitarbeiter oberhalb von "Adler"
     new_data = pd.DataFrame([{
