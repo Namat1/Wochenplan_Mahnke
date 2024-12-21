@@ -120,19 +120,19 @@ def style_excel(ws, calendar_week):
         for cell in ws[row]:
             cell.alignment = Alignment(horizontal="center", vertical="center")
             cell.border = thin_border
-            if row % 2 == 0:  # Jede zweite Zeile einfärben
-                cell.fill = alt_row_fill
 
-        # Überprüfe die Nachnamen in Spalte A (Index 1)
-        lastname = ws.cell(row=row, column=1).value  # Nachname in Spalte A
+        # Überprüfe die Nachnamen in Spalte B (Index 2)
+        lastname = ws.cell(row=row, column=2).value  # Nachname in Spalte B
         if lastname and lastname.lower() in ["linke", "pekrul", "schulz", "schlutt", "stargard", "steckel"]:
-            # Färbe die Spalten A und B in hellblau
-            ws.cell(row=row, column=1).fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")  # Hellblau für Spalte A
-            ws.cell(row=row, column=2).fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")  # Hellblau für Spalte B
+            # Abwechselnd blau/hellblau für diese Zeilen
+            if row % 2 == 0:
+                fill_color = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")  # Hellblau
+            else:
+                fill_color = PatternFill(start_color="4682B4", end_color="4682B4", fill_type="solid")  # Blau
 
-            # Färbe die gesamte Zeile in hellblau
+            # Färbe die gesamte Zeile (Spalten A bis G)
             for cell in ws[row]:
-                cell.fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")  # Hellblau für die gesamte Zeile
+                cell.fill = fill_color
 
     # Spaltenbreite anpassen
     adjust_column_width(ws)
