@@ -214,7 +214,7 @@ if uploaded_file:
     extracted_data.columns = columns
 
     # Excel-Dateiname mit Kalenderwoche erstellen
-    excel_filename = f"Kalenderwoche: {calendar_week + 1}.xlsx"
+    excel_filename = f"Fuhrpark_Meldung_KW: {calendar_week + 1}.xlsx"
 
 
     # Daten als Excel-Datei exportieren
