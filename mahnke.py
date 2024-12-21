@@ -20,19 +20,31 @@ def extract_work_data(df):
         st.error("Die Werte 'Adler' oder 'Zosel' wurden in Spalte B nicht gefunden.")
         st.stop()  # Beendet die Ausführung
 
-    # Suche nach Start- und Endindex basierend auf den Werten in Spalte B
-    start_index = df[df.iloc[:, 1] == "adler"].index[0]
-    end_index = df[df.iloc[:, 1] == "zosel"].index[0]
+    # Bereich 1: Von "Adler" bis "Zosel"
+    start_index_1 = df[df.iloc[:, 1] == "adler"].index[0]
+    end_index_1 = df[df.iloc[:, 1] == "zosel"].index[0]
 
-    row_index = start_index
-    while row_index <= end_index:
-        # Nachname mit nur den ersten Buchstaben groß und Vorname auch mit nur den ersten Buchstaben groß
+    # Bereich 2: Von "Böhnke" bis "Kleiber"
+    if "böhnke" not in df.iloc[:, 1].values or "kleiber" not in df.iloc[:, 1].values:
+        st.error("Die Werte 'Böhnke' oder 'Kleiber' wurden in Spalte B nicht gefunden.")
+        st.stop()  # Beendet die Ausführung
+
+    start_index_2 = df[df.iloc[:, 1] == "böhnke"].index[0]
+    end_index_2 = df[df.iloc[:, 1] == "kleiber"].index[0]
+
+    # Verarbeite beide Bereiche
+    all_rows = []
+    for row_index in range(start_index_1, end_index_1 + 1):
+        all_rows.append(row_index)
+    for row_index in range(start_index_2, end_index_2 + 1):
+        all_rows.append(row_index)
+
+    for row_index in all_rows:
         lastname = str(df.iloc[row_index, 1]).strip().title()  # Spalte B
         firstname = str(df.iloc[row_index, 2]).strip().title()  # Spalte C
 
         # Überspringe Zeilen, bei denen Nachname oder Vorname fehlt
         if not lastname or not firstname:
-            row_index += 2
             continue
 
         activities_row = row_index + 1
@@ -68,7 +80,6 @@ def extract_work_data(df):
                 row[weekday] = activity
 
         result.append(row)
-        row_index += 2  # Zwei Zeilen weiter
 
     return pd.DataFrame(result)
 
