@@ -30,8 +30,12 @@ def extract_work_data_for_range(df, start_value, end_value):
         lastname = str(df.iloc[row_index, 1]).strip().title()  # Spalte B
         firstname = str(df.iloc[row_index, 2]).strip().title()  # Spalte C
 
-        # Überspringe Zeilen, bei denen Nachname oder Vorname fehlt oder 'None'
+        # Überspringe Zeilen, bei denen Nachname oder Vorname fehlt oder 'None' ist
         if not lastname or not firstname or lastname == "None" or firstname == "None":
+            continue
+
+        # Überspringe Zeilen, bei denen Nachname "Leer" ist
+        if lastname == "Leer":
             continue
 
         activities_row = row_index + 1
