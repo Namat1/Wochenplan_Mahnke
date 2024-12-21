@@ -202,10 +202,12 @@ if uploaded_file:
     # Füge alle Daten zusammen
     extracted_data = pd.concat([new_data, extracted_data_1, extracted_data_2, extracted_data_3], ignore_index=True)
 
-    # Kalenderwoche berechnen
-    dates = create_header_with_dates(data)
-    first_date = pd.to_datetime(dates[0], format='%d.%m.%Y')
-    calendar_week = first_date.isocalendar()[1]
+    # Datum aus Zelle G2 lesen
+date_g2 = sheet["G2"].value
+
+# Überprüfen, ob das Datum gültig ist
+if isinstance(date_g2, datetime):
+    calendar_week = date_g2.isocalendar()[1]
 
     # Flache Spaltenüberschriften erstellen
     columns = ["Nachname", "Vorname"] + [f"{weekday} ({date})" for weekday, date in zip(
@@ -215,6 +217,9 @@ if uploaded_file:
 
     # Excel-Dateiname mit Kalenderwoche erstellen
     excel_filename = f"Wochenbericht_Fuhrpark_KW{calendar_week:02d}.xlsx"
+else:
+    st.error("Fehler: In Zelle G2 steht kein gültiges Datum.")
+    st.stop()
 
     # Daten als Excel-Datei exportieren
     output = BytesIO()
