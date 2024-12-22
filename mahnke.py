@@ -11,7 +11,7 @@ st.info("Die rot und grün gefärbten Zeilen müssen manuell eingetragen werden.
 
 # Funktion zum Extrahieren der relevanten Daten für einen Bereich
 def extract_work_data_for_range(df, start_value, end_value):
-    relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule", "n.A."]
+    relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule"]
     excluded_words = ["Hoffahrer", "Waschteam", "Aushilfsfahrer"]
     result = []
 
