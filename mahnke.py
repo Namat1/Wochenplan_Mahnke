@@ -229,8 +229,12 @@ if uploaded_file:
     # Exportiere die Daten als Excel-Datei
     progress_status.text("Exportiere Excel-Datei...")
     output = BytesIO()
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
+with pd.ExcelWriter(output, engine="openpyxl") as writer:
+    extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
+    ws = writer.sheets["Wochenübersicht"]
+    style_excel(ws, calendar_week, len(new_data), len(extracted_data))  # Optische Anpassungen und KW-/Abteilungs-Eintrag
+excel_data = output.getvalue()
+
     progress_bar.progress(90)
         
 
