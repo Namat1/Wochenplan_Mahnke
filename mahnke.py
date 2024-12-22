@@ -6,6 +6,21 @@ from openpyxl.utils import get_column_letter
 from datetime import datetime
 from io import BytesIO
 
+# Importieren Sie die Zeitbibliothek für Simulationen
+import time
+
+# Fortschrittsanzeige während der Verarbeitung
+st.info("Bitte warten Sie, während die Daten verarbeitet werden...")
+progress_bar = st.progress(0)
+
+# Simulieren Sie die Fortschrittsaktualisierung
+for percent_complete in range(101):  # Fortschritt von 0 bis 100
+    time.sleep(0.05)  # Simulation von Arbeit
+    progress_bar.progress(percent_complete)
+
+# Fortschrittsanzeige abgeschlossen
+st.success("Verarbeitung abgeschlossen!")
+
 # Hinweis an den Benutzer
 st.info("Die rot und grün gefärbten Zeilen müssen manuell eingetragen werden. Dispo und Aushilfen!")
 
