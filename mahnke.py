@@ -172,6 +172,51 @@ if uploaded_file:
     sheet = wb["Druck Fahrer"]
     data = pd.DataFrame(sheet.values)
 
+    if uploaded_file:
+    # Fortschrittsanzeige initialisieren
+    progress_bar = st.progress(0)
+    progress_status = st.empty()
+
+    # 1. Fortschritt: Excel-Datei laden
+    progress_status.text("Lade die Excel-Datei...")
+    wb = load_workbook(uploaded_file, data_only=True)
+    progress_bar.progress(20)
+
+    # 2. Fortschritt: Daten auslesen
+    progress_status.text("Lese Daten aus der Excel-Datei...")
+    sheet = wb["Druck Fahrer"]
+    data = pd.DataFrame(sheet.values)
+    progress_bar.progress(40)
+
+    # 3. Fortschritt: Daten extrahieren
+    progress_status.text("Extrahiere relevante Daten...")
+    extracted_data_1 = extract_work_data_for_range(data, "adler", "steckel")
+    progress_bar.progress(60)
+
+    # 4. Fortschritt: Daten vorbereiten
+    progress_status.text("Bereite die Daten vor...")
+    new_data = pd.DataFrame([{
+        "Nachname": "Carstensen", "Vorname": "Martin", "Sonntag": "", "Montag": "", "Dienstag": "",
+        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
+    }, {
+        "Nachname": "Richter", "Vorname": "Clemens", "Sonntag": "", "Montag": "", "Dienstag": "",
+        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
+    }])
+    extracted_data = pd.concat([new_data, extracted_data_1], ignore_index=True)
+    progress_bar.progress(80)
+
+    # 5. Fortschritt: Excel-Datei erstellen
+    progress_status.text("Erstelle Excel-Datei mit den verarbeiteten Daten...")
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
+        ws = writer.sheets["Wochenübersicht"]
+    progress_bar.progress(100)
+
+    # Fortschrittsanzeige abschließen
+    progress_status.text("Verarbeitung abgeschlossen!")
+    st.success("Die Excel-Datei wurde erfolgreich verarbeitet.")
+
     # Erstelle 6 Zeilen für die Mitarbeiter oberhalb von "Adler"
     new_data = pd.DataFrame([{
         "Nachname": "Carstensen", "Vorname": "Martin", "Sonntag": "", "Montag": "", "Dienstag": "", 
