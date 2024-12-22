@@ -72,7 +72,35 @@ def extract_work_data_for_range(df, start_value, end_value):
 
 # Funktion, um die Tabelle optisch aufzubereiten
 def style_excel(ws, calendar_week, num_new_rows, total_rows):
-    # ... (wie zuvor, bleibt unverändert)
+    header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")
+    alt_row_fill = PatternFill(start_color="FFFFF0AA", end_color="FFFFF0AA", fill_type="solid")
+    title_fill = PatternFill(start_color="FF4682B4", end_color="FF4682B4", fill_type="solid")
+    thin_border = Border(
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin")
+    )
+
+    ws["A1"].value = f"Kalenderwoche: {calendar_week + 1}"
+    ws["A1"].font = Font(bold=True, size=16, color="FFFFFF")
+    ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+    ws["A1"].fill = title_fill
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ws.max_column)
+
+    for col in ws.iter_cols(min_row=3, max_row=3, min_col=1, max_col=ws.max_column):
+        for cell in col:
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            cell.font = Font(bold=True, size=12)
+            cell.fill = header_fill
+            cell.border = thin_border
+
+    for row in range(4, ws.max_row + 1):
+        for cell in ws[row]:
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = thin_border
+            if row % 2 == 0:
+                cell.fill = alt_row_fill
 
 # Streamlit App
 st.title("Wochenarbeitsbericht Fuhrpark")
