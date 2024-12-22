@@ -232,11 +232,13 @@ if uploaded_file:
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
     progress_bar.progress(90)
-        progress_status.text("Fertig!")
+        
+
+     # Fortschrittsanzeige abschließen
+    progress_status.text("Fertig!")
     st.success("Verarbeitung abgeschlossen.")
     progress_bar.progress(100)
-
-
+    
     # Download-Option
     st.download_button(
         label="Download als Excel",
