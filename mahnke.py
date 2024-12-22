@@ -167,10 +167,18 @@ st.title("Wochenarbeitsbericht Fuhrpark")
 uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
 
 if uploaded_file:
+    # Initialisiere Fortschrittsbalken
+    progress_bar = st.progress(0)
+    progress_status = st.empty()
+    
     # Lade die Excel-Datei
+    progress_status.text("Lade Excel-Datei...")
     wb = load_workbook(uploaded_file, data_only=True)
     sheet = wb["Druck Fahrer"]
     data = pd.DataFrame(sheet.values)
+    progress_status.text("Excel-Daten geladen.")
+    progress_bar.progress(30)  # Fortschritt auf 30% setzen
+
 
     # Erstelle 6 Zeilen für die Mitarbeiter oberhalb von "Adler"
     new_data = pd.DataFrame([{
@@ -190,8 +198,11 @@ if uploaded_file:
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
     }])
 
-    # Extrahiere die Daten für den Bereich (Adler bis Zosel)
+    # Extrahiere die relevanten Daten
+    progress_status.text("Extrahiere Daten...")
     extracted_data_1 = extract_work_data_for_range(data, "adler", "steckel")
+    progress_bar.progress(60)
+
 
     
 
@@ -215,13 +226,16 @@ if uploaded_file:
     excel_filename = f"Fuhrpark_Meldung_KW: {calendar_week + 1}.xlsx"
 
 
-    # Daten als Excel-Datei exportieren
+    # Exportiere die Daten als Excel-Datei
+    progress_status.text("Exportiere Excel-Datei...")
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
-        ws = writer.sheets["Wochenübersicht"]
-        style_excel(ws, calendar_week, len(new_data), len(extracted_data))  # Optische Anpassungen und KW-/Abteilungs-Eintrag
-    excel_data = output.getvalue()
+    progress_bar.progress(90)
+        progress_status.text("Fertig!")
+    st.success("Verarbeitung abgeschlossen.")
+    progress_bar.progress(100)
+
 
     # Download-Option
     st.download_button(
