@@ -226,23 +226,20 @@ if uploaded_file:
     excel_filename = f"Fuhrpark_Meldung_KW: {calendar_week + 1}.xlsx"
 
 
-    # Exportiere die Daten als Excel-Datei
+        # Exportiere die Daten als Excel-Datei
     progress_status.text("Exportiere Excel-Datei...")
     output = BytesIO()
-with pd.ExcelWriter(output, engine="openpyxl") as writer:
-    extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
-    ws = writer.sheets["Wochenübersicht"]
-    style_excel(ws, calendar_week, len(new_data), len(extracted_data))  # Optische Anpassungen und KW-/Abteilungs-Eintrag
-excel_data = output.getvalue()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
+        ws = writer.sheets["Wochenübersicht"]
+        style_excel(ws, calendar_week, len(new_data), len(extracted_data))  # Optische Anpassungen und KW-/Abteilungs-Eintrag
+    excel_data = output.getvalue()
 
-    progress_bar.progress(90)
-        
-
-     # Fortschrittsanzeige abschließen
+    # Fortschrittsanzeige abschließen
     progress_status.text("Fertig!")
     st.success("Verarbeitung abgeschlossen.")
     progress_bar.progress(100)
-    
+
     # Download-Option
     st.download_button(
         label="Download als Excel",
@@ -250,3 +247,4 @@ excel_data = output.getvalue()
         file_name=excel_filename,
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
