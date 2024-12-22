@@ -6,37 +6,30 @@ from openpyxl.utils import get_column_letter
 from datetime import datetime
 from io import BytesIO
 
-# Hinweis an den Benutzer
+st.title("Wochenarbeitsbericht Fuhrpark")
 st.info("Die rot und grün gefärbten Zeilen müssen manuell eingetragen werden. Dispo und Aushilfen!")
 
-# Funktion zum Extrahieren der relevanten Daten für einen Bereich
+# Funktionen bleiben unverändert
 def extract_work_data_for_range(df, start_value, end_value):
     relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule"]
     excluded_words = ["Hoffahrer", "Waschteam", "Aushilfsfahrer"]
     result = []
 
-    # Bereinige Spalte B (zweite Spalte) von Leerzeichen und setze alles in Kleinbuchstaben
     df.iloc[:, 1] = df.iloc[:, 1].astype(str).str.strip().str.lower()
-
-    # Prüfe, ob der Bereich existiert
     if start_value not in df.iloc[:, 1].values or end_value not in df.iloc[:, 1].values:
         st.error(f"Die Werte '{start_value}' oder '{end_value}' wurden in Spalte B nicht gefunden.")
-        st.stop()  # Beendet die Ausführung
+        st.stop()
 
     start_index = df[df.iloc[:, 1] == start_value].index[0]
     end_index = df[df.iloc[:, 1] == end_value].index[0]
 
     for row_index in range(start_index, end_index + 1):
-        lastname = str(df.iloc[row_index, 1]).strip().title()  # Spalte B
-        firstname = str(df.iloc[row_index, 2]).strip().title()  # Spalte C
-
-        # Überspringe Zeilen, bei denen Nachname oder Vorname fehlt oder 'None'
+        lastname = str(df.iloc[row_index, 1]).strip().title()
+        firstname = str(df.iloc[row_index, 2]).strip().title()
         if not lastname or not firstname or lastname == "None" or firstname == "None":
             continue
 
         activities_row = row_index + 1
-
-        # Initialisiere Zeilen für die Ausgabe
         row = {
             "Nachname": lastname,
             "Vorname": firstname,
@@ -49,20 +42,12 @@ def extract_work_data_for_range(df, start_value, end_value):
             "Samstag": "",
         }
 
-        # Iteriere durch die Wochentage und prüfe beide Zellen (z. B. E und F für Sonntag)
-        for day, (col1, col2) in enumerate(
-            [(4, 5), (6, 7), (8, 9), (10, 11), (12, 13), (14, 15), (16, 17)]
-        ):
-            # Aktivität aus beiden Zellen auslesen
+        for day, (col1, col2) in enumerate([(4, 5), (6, 7), (8, 9), (10, 11), (12, 13), (14, 15), (16, 17)]):
             activity1 = str(df.iloc[activities_row, col1]).strip()
             activity2 = str(df.iloc[activities_row, col2]).strip()
-
-            # Kombiniere beide Aktivitäten, falls sie nicht leer oder "0" sind
             activity = " ".join(filter(lambda x: x and x != "0", [activity1, activity2])).strip()
-
-            # Prüfen, ob eine der relevanten Aktivitäten vorkommt und keine der ausgeschlossenen Wörter enthalten ist
             if (any(word in activity for word in relevant_words) and
-                not any(excluded in activity for excluded in excluded_words)):
+                    not any(excluded in activity for excluded in excluded_words)):
                 weekday = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day]
                 row[weekday] = activity
 
@@ -70,35 +55,73 @@ def extract_work_data_for_range(df, start_value, end_value):
 
     return pd.DataFrame(result)
 
-# Funktion, um die Datumszeile zu erstellen
+
 def create_header_with_dates(df):
     dates = [
-        pd.to_datetime(df.iloc[1, 4]).strftime('%d.%m.%Y'),  # E2
-        pd.to_datetime(df.iloc[1, 6]).strftime('%d.%m.%Y'),  # G2
-        pd.to_datetime(df.iloc[1, 8]).strftime('%d.%m.%Y'),  # I2
-        pd.to_datetime(df.iloc[1, 10]).strftime('%d.%m.%Y'), # K2
-        pd.to_datetime(df.iloc[1, 12]).strftime('%d.%m.%Y'), # M2
-        pd.to_datetime(df.iloc[1, 14]).strftime('%d.%m.%Y'), # O2
-        pd.to_datetime(df.iloc[1, 16]).strftime('%d.%m.%Y'), # Q2
+        pd.to_datetime(df.iloc[1, 4]).strftime('%d.%m.%Y'),
+        pd.to_datetime(df.iloc[1, 6]).strftime('%d.%m.%Y'),
+        pd.to_datetime(df.iloc[1, 8]).strftime('%d.%m.%Y'),
+        pd.to_datetime(df.iloc[1, 10]).strftime('%d.%m.%Y'),
+        pd.to_datetime(df.iloc[1, 12]).strftime('%d.%m.%Y'),
+        pd.to_datetime(df.iloc[1, 14]).strftime('%d.%m.%Y'),
+        pd.to_datetime(df.iloc[1, 16]).strftime('%d.%m.%Y'),
     ]
     return dates
 
-# Funktion, um die Tabelle optisch aufzubereiten
-def style_excel(ws, calendar_week, num_new_rows, total_rows):
-    # Farben und Stil für Header und Gitterlinien
-    header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")  # Hellblau für Header
-    alt_row_fill = PatternFill(start_color="FFFFF0AA", end_color="FFFFF0AA", fill_type="solid")  # Hellgelb für Zeilen
-    title_fill = PatternFill(start_color="FF4682B4", end_color="FF4682B4", fill_type="solid")  # Dunkelblau für KW/Abteilung
-    last_row_fill_odd = PatternFill(start_color="FF32CD32", end_color="FF32CD32", fill_type="solid")  # Grün für ungerade Zeilen
-    last_row_fill_even = PatternFill(start_color="FF98FB98", end_color="FF98FB98", fill_type="solid")  # Hellgrün für gerade Zeilen
-    new_row_fill_odd = PatternFill(start_color="FFFA8072", end_color="FFFA8072", fill_type="solid")  # Hellrot für ungerade Zeilen
-    new_row_fill_even = PatternFill(start_color="FFCD5C5C", end_color="FFCD5C5C", fill_type="solid")  # Rot für gerade Zeilen
-    thin_border = Border(
-        left=Side(style="thin"),
-        right=Side(style="thin"),
-        top=Side(style="thin"),
-        bottom=Side(style="thin")
+# Hauptprogramm mit Fortschrittsanzeige
+uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
+
+if uploaded_file:
+    progress_bar = st.progress(0)
+    progress_status = st.empty()
+
+    # 1. Lade die Excel-Datei
+    progress_status.text("Lade die Excel-Datei...")
+    wb = load_workbook(uploaded_file, data_only=True)
+    progress_bar.progress(20)
+
+    # 2. Lese Daten aus der Excel-Datei
+    progress_status.text("Lese Daten aus der Excel-Datei...")
+    sheet = wb["Druck Fahrer"]
+    data = pd.DataFrame(sheet.values)
+    progress_bar.progress(40)
+
+    # 3. Daten extrahieren
+    progress_status.text("Extrahiere relevante Daten...")
+    extracted_data_1 = extract_work_data_for_range(data, "adler", "steckel")
+    progress_bar.progress(60)
+
+    # 4. Daten vorbereiten
+    progress_status.text("Bereite die Daten vor...")
+    new_data = pd.DataFrame([{
+        "Nachname": "Carstensen", "Vorname": "Martin", "Sonntag": "", "Montag": "", "Dienstag": "",
+        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
+    }, {
+        "Nachname": "Richter", "Vorname": "Clemens", "Sonntag": "", "Montag": "", "Dienstag": "",
+        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
+    }])
+    extracted_data = pd.concat([new_data, extracted_data_1], ignore_index=True)
+    progress_bar.progress(80)
+
+    # 5. Erstelle Excel-Datei
+    progress_status.text("Erstelle die Excel-Datei...")
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        extracted_data.to_excel(writer, index=False, sheet_name="Wochenübersicht", startrow=2)
+    progress_bar.progress(100)
+
+    # Fertig
+    progress_status.text("Verarbeitung abgeschlossen!")
+    st.success("Die Excel-Datei wurde erfolgreich verarbeitet.")
+
+    # Download-Button
+    st.download_button(
+        label="Download als Excel",
+        data=output.getvalue(),
+        file_name="Fuhrpark_Wochenbericht.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
 
     # KW-Eintrag oberhalb der Tabelle
     ws["A1"].value = f"Kalenderwoche: {calendar_week + 1}"  # KW + 1
