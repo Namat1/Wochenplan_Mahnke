@@ -174,7 +174,7 @@ if uploaded_file:
 
     # Erstelle 6 Zeilen für die Mitarbeiter oberhalb von "Adler"
     new_data = pd.DataFrame([{
-        "Nachname": "Castensen", "Vorname": "Martin", "Sonntag": "", "Montag": "", "Dienstag": "", 
+        "Nachname": "Carstensen", "Vorname": "Martin", "Sonntag": "", "Montag": "", "Dienstag": "", 
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
     }, {
         "Nachname": "Richter", "Vorname": "Clemens", "Sonntag": "", "Montag": "", "Dienstag": "", 
