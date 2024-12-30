@@ -83,7 +83,6 @@ def create_header_with_dates(df):
     ]
     return dates
 
-# Funktion, um die Tabelle optisch aufzubereiten
 def style_excel(ws, calendar_week, num_new_rows, total_rows):
     # Farben und Stil für Header und Gitterlinien
     header_fill = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")  # Hellblau für Header
@@ -131,14 +130,12 @@ def style_excel(ws, calendar_week, num_new_rows, total_rows):
                 cell.fill = alt_row_fill
 
     # Formatierung für die letzten 7 Zeilen (abwechselnd grün und hellgrün)
-for row in range(ws.max_row - 6, ws.max_row + 1):  # Starte 6 Zeilen vor der letzten
-    for cell in ws[row]:
-        if (row - (ws.max_row - 6)) % 2 == 0:  # Ungerade Zeilen
-            cell.fill = last_row_fill_odd
-        else:  # Gerade Zeilen
-            cell.fill = last_row_fill_even
-
-
+    for row in range(ws.max_row - 6, ws.max_row + 1):  # Starte 6 Zeilen vor der letzten
+        for cell in ws[row]:
+            if (row - (ws.max_row - 6)) % 2 == 0:  # Ungerade Zeilen
+                cell.fill = last_row_fill_odd
+            else:  # Gerade Zeilen
+                cell.fill = last_row_fill_even
 
     # Formatierung für die ersten 6 Zeilen (abwechselnd rot und hellrot)
     for row in range(4, 4 + num_new_rows):
@@ -153,6 +150,7 @@ for row in range(ws.max_row - 6, ws.max_row + 1):  # Starte 6 Zeilen vor der let
 
     # Erste drei Zeilen fixieren
     ws.freeze_panes = "A4"
+
 
 # Funktion, um die Spaltenbreite anzupassen
 def adjust_column_width(ws):
