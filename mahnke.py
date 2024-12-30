@@ -139,6 +139,7 @@ for row in range(ws.max_row - 6, ws.max_row + 1):  # Starte 6 Zeilen vor der let
             cell.fill = last_row_fill_even
 
 
+
     # Formatierung für die ersten 6 Zeilen (abwechselnd rot und hellrot)
     for row in range(4, 4 + num_new_rows):
         for cell in ws[row]:
