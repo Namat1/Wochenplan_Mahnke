@@ -130,13 +130,14 @@ def style_excel(ws, calendar_week, num_new_rows, total_rows):
             if row % 2 == 0:  # Jede zweite Zeile einfärben
                 cell.fill = alt_row_fill
 
-    # Formatierung für die letzten 6 Zeilen (abwechselnd grün und hellgrün)
-    for row in range(ws.max_row - 5, ws.max_row + 1):
-        for cell in ws[row]:
-            if (row - (ws.max_row - 5)) % 2 == 0:  # Ungerade Zeilen
-                cell.fill = last_row_fill_odd
-            else:  # Gerade Zeilen
-                cell.fill = last_row_fill_even
+    # Formatierung für die letzten 7 Zeilen (abwechselnd grün und hellgrün)
+for row in range(ws.max_row - 6, ws.max_row + 1):  # Starte 6 Zeilen vor der letzten
+    for cell in ws[row]:
+        if (row - (ws.max_row - 6)) % 2 == 0:  # Ungerade Zeilen
+            cell.fill = last_row_fill_odd
+        else:  # Gerade Zeilen
+            cell.fill = last_row_fill_even
+
 
     # Formatierung für die ersten 6 Zeilen (abwechselnd rot und hellrot)
     for row in range(4, 4 + num_new_rows):
