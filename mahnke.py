@@ -188,7 +188,7 @@ if uploaded_file:
         "Nachname": "Richter", "Vorname": "Clemens", "Sonntag": "", "Montag": "", "Dienstag": "", 
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
     }, {
-        "Nachname": "Gebauer", "Vorname": "Ronny", "Sonntag": "", "Montag": "", "Dienstag": "", 
+        "Nachname": "Lau", "Vorname": "Eike", "Sonntag": "", "Montag": "", "Dienstag": "", 
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
     }, {
         "Nachname": "Pham Manh", "Vorname": "Chris", "Sonntag": "", "Montag": "", "Dienstag": "", 
