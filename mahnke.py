@@ -58,7 +58,8 @@ def extract_work_data_for_range(df, start_value, end_value):
             if (any(word in activity for word in relevant_words) and
                 not any(excluded in activity for excluded in excluded_words)):
                 weekday = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day]
-                row[weekday] = activity
+                row[weekday] = activity.title()  # → z. B. "Kur Und Reha"
+
 
         result.append(row)
 
