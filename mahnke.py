@@ -11,32 +11,33 @@ st.info("Die rot gefärbten Zeilen müssen manuell eingetragen werden. Dispo!")
 
 # Funktion zum Extrahieren der relevanten Daten für einen Bereich
 def extract_work_data_for_range(df, start_value, end_value):
-    relevant_words = ["Ausgleich", "Krank", "Sonderurlaub", "Urlaub", "Berufsschule", "Fahrschule"]
-    excluded_words = ["Hoffahrer", "Waschteam", "Aushilfsfahrer"]
+    relevant_words = [
+        "ausgleich", "krank", "sonderurlaub", "urlaub",
+        "berufsschule", "fahrschule", "homeoffice",
+        "schulung", "dienstreise", "seminar", "fortbildung",
+        "elternzeit", "kur", "reha", "kur und reha", "reha und kur"
+    ]
+    excluded_words = ["hoffahrer", "waschteam", "aushilfsfahrer"]
     result = []
 
-    # Bereinige Spalte B (zweite Spalte) von Leerzeichen und setze alles in Kleinbuchstaben
     df.iloc[:, 1] = df.iloc[:, 1].astype(str).str.strip().str.lower()
 
-    # Prüfe, ob der Bereich existiert
     if start_value not in df.iloc[:, 1].values or end_value not in df.iloc[:, 1].values:
         st.error(f"Die Werte '{start_value}' oder '{end_value}' wurden in Spalte B nicht gefunden.")
-        st.stop()  # Beendet die Ausführung
+        st.stop()
 
     start_index = df[df.iloc[:, 1] == start_value].index[0]
     end_index = df[df.iloc[:, 1] == end_value].index[0]
 
     for row_index in range(start_index, end_index + 1):
-        lastname = str(df.iloc[row_index, 1]).strip().title()  # Spalte B
-        firstname = str(df.iloc[row_index, 2]).strip().title()  # Spalte C
+        lastname = str(df.iloc[row_index, 1]).strip().title()
+        firstname = str(df.iloc[row_index, 2]).strip().title()
 
-        # Überspringe Zeilen, bei denen Nachname oder Vorname fehlt oder 'None'
         if not lastname or not firstname or lastname == "None" or firstname == "None":
             continue
 
         activities_row = row_index + 1
 
-        # Initialisiere Zeilen für die Ausgabe
         row = {
             "Nachname": lastname,
             "Vorname": firstname,
@@ -49,18 +50,11 @@ def extract_work_data_for_range(df, start_value, end_value):
             "Samstag": "",
         }
 
-        # Iteriere durch die Wochentage und prüfe beide Zellen (z. B. E und F für Sonntag)
-        for day, (col1, col2) in enumerate(
-            [(4, 5), (6, 7), (8, 9), (10, 11), (12, 13), (14, 15), (16, 17)]
-        ):
-            # Aktivität aus beiden Zellen auslesen
+        for day, (col1, col2) in enumerate([(4, 5), (6, 7), (8, 9), (10, 11), (12, 13), (14, 15), (16, 17)]):
             activity1 = str(df.iloc[activities_row, col1]).strip()
             activity2 = str(df.iloc[activities_row, col2]).strip()
+            activity = " ".join(filter(lambda x: x and x != "0", [activity1, activity2])).strip().lower()
 
-            # Kombiniere beide Aktivitäten, falls sie nicht leer oder "0" sind
-            activity = " ".join(filter(lambda x: x and x != "0", [activity1, activity2])).strip()
-
-            # Prüfen, ob eine der relevanten Aktivitäten vorkommt und keine der ausgeschlossenen Wörter enthalten ist
             if (any(word in activity for word in relevant_words) and
                 not any(excluded in activity for excluded in excluded_words)):
                 weekday = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][day]
@@ -69,6 +63,7 @@ def extract_work_data_for_range(df, start_value, end_value):
         result.append(row)
 
     return pd.DataFrame(result)
+
 
 # Funktion, um die Datumszeile zu erstellen
 def create_header_with_dates(df):
