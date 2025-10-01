@@ -220,7 +220,7 @@ if uploaded_file:
     progress_status.text("Excel-Daten geladen.")
     progress_bar.progress(30)
 
-    # Erstelle 5 Zeilen für die Mitarbeiter oberhalb von "Adler"
+    # Erstelle 6 Zeilen für die Mitarbeiter oberhalb von "Adler"
     new_data = pd.DataFrame([{
         "Nachname": "Carstensen", "Vorname": "Martin", "Sonntag": "", "Montag": "", "Dienstag": "", 
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
@@ -235,6 +235,9 @@ if uploaded_file:
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
     }, {
         "Nachname": "Ohlenroth", "Vorname": "Nadja", "Sonntag": "", "Montag": "", "Dienstag": "", 
+        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
+    }, {
+        "Nachname": "Schulz", "Vorname": "Julian", "Sonntag": "", "Montag": "", "Dienstag": "", 
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
     }])
 
