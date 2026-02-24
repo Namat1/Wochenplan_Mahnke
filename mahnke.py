@@ -80,19 +80,19 @@ def create_header_with_dates(df):
 
 def style_excel(ws, calendar_week, num_new_rows, total_rows):
     # Moderne Farbpalette
-    title_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")  # Dunkelblau für KW/Abteilung
-    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")  # Mittelblau für Header
-    data_fill_white = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")  # Weiß
-    data_fill_light = PatternFill(start_color="F8F9FA", end_color="F8F9FA", fill_type="solid")  # Hellgrau
-    
+    title_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    data_fill_white = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+    data_fill_light = PatternFill(start_color="F8F9FA", end_color="F8F9FA", fill_type="solid")
+
     # Rot-Töne für neue Mitarbeiter (müssen manuell eingetragen werden)
-    new_row_fill_dark = PatternFill(start_color="E74C3C", end_color="E74C3C", fill_type="solid")  # Dunkelrot
-    new_row_fill_light = PatternFill(start_color="F1948A", end_color="F1948A", fill_type="solid")  # Hellrot
-    
+    new_row_fill_dark = PatternFill(start_color="E74C3C", end_color="E74C3C", fill_type="solid")
+    new_row_fill_light = PatternFill(start_color="F1948A", end_color="F1948A", fill_type="solid")
+
     # Grün-Töne für letzte Zeilen
-    last_row_fill_dark = PatternFill(start_color="27AE60", end_color="27AE60", fill_type="solid")  # Dunkelgrün
-    last_row_fill_light = PatternFill(start_color="82E0AA", end_color="82E0AA", fill_type="solid")  # Hellgrün
-    
+    last_row_fill_dark = PatternFill(start_color="27AE60", end_color="27AE60", fill_type="solid")
+    last_row_fill_light = PatternFill(start_color="82E0AA", end_color="82E0AA", fill_type="solid")
+
     # Rahmen
     thin_border = Border(
         left=Side(style="thin", color="CCCCCC"),
@@ -100,7 +100,7 @@ def style_excel(ws, calendar_week, num_new_rows, total_rows):
         top=Side(style="thin", color="CCCCCC"),
         bottom=Side(style="thin", color="CCCCCC")
     )
-    
+
     medium_border = Border(
         left=Side(style="medium", color="1F4E78"),
         right=Side(style="medium", color="1F4E78"),
@@ -126,7 +126,7 @@ def style_excel(ws, calendar_week, num_new_rows, total_rows):
     ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=ws.max_column)
     ws.row_dimensions[2].height = 26
 
-    # Header-Zeile (Zeile 3) - fett, zentriert und farbig
+    # Header-Zeile (Zeile 3)
     for col in ws.iter_cols(min_row=3, max_row=3, min_col=1, max_col=ws.max_column):
         for cell in col:
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -135,28 +135,27 @@ def style_excel(ws, calendar_week, num_new_rows, total_rows):
             cell.border = medium_border
     ws.row_dimensions[3].height = 24
 
-    # Datenzeilen formatieren (abwechselnd einfärben)
+    # Datenzeilen formatieren
     for row in range(4, ws.max_row + 1):
         for cell in ws[row]:
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             cell.font = Font(size=10, color="2C3E50")
             cell.border = thin_border
-            
-            # Alternierende Farben für normale Zeilen
+
             if row % 2 == 0:
                 cell.fill = data_fill_light
             else:
                 cell.fill = data_fill_white
-        
+
         ws.row_dimensions[row].height = 20
 
-    # Formatierung für die ersten num_new_rows Datenzeilen (rot - manuell einzutragen)
+    # Formatierung für die ersten num_new_rows Datenzeilen (rot)
     for row in range(4, 4 + num_new_rows):
         for cell in ws[row]:
-            if (row - 4) % 2 == 0:  # Gerade Zeilen
+            if (row - 4) % 2 == 0:
                 cell.fill = new_row_fill_dark
                 cell.font = Font(size=10, color="FFFFFF", bold=True)
-            else:  # Ungerade Zeilen
+            else:
                 cell.fill = new_row_fill_light
                 cell.font = Font(size=10, color="2C3E50", bold=True)
             cell.border = thin_border
@@ -165,41 +164,36 @@ def style_excel(ws, calendar_week, num_new_rows, total_rows):
     for row in range(ws.max_row - 6, ws.max_row + 1):
         for cell in ws[row]:
             relative_row = row - (ws.max_row - 6)
-            if relative_row % 2 == 0:  # Gerade Zeilen
+            if relative_row % 2 == 0:
                 cell.fill = last_row_fill_dark
                 cell.font = Font(size=10, color="FFFFFF", bold=True)
-            else:  # Ungerade Zeilen
+            else:
                 cell.fill = last_row_fill_light
                 cell.font = Font(size=10, color="2C3E50", bold=True)
             cell.border = thin_border
 
-    # Spaltenbreite anpassen mit Mindestbreiten
+    # Spaltenbreite anpassen
     column_min_widths = {
         1: 18,  # Nachname
         2: 16,  # Vorname
     }
-    
+
     for col_idx, col in enumerate(ws.columns, start=1):
         max_length = 0
         col_letter = get_column_letter(col[0].column)
-        
+
         for cell in col:
             if cell.value:
                 max_length = max(max_length, len(str(cell.value)))
-        
-        # Berechne Breite mit Puffer
+
         calculated_width = max_length + 4
-        
-        # Verwende Mindestbreite falls definiert
         min_width = column_min_widths.get(col_idx, 15)
         adjusted_width = max(calculated_width, min_width)
-        
-        # Maximalbreite begrenzen
         adjusted_width = min(adjusted_width, 60)
-        
+
         ws.column_dimensions[col_letter].width = adjusted_width
 
-    # Erste drei Zeilen fixieren (KW, Abteilung, Header)
+    # Erste drei Zeilen fixieren
     ws.freeze_panes = "A4"
 
 
@@ -208,11 +202,9 @@ st.title("Wochenarbeitsbericht Fuhrpark")
 uploaded_file = st.file_uploader("Lade eine Excel-Datei hoch", type=["xlsx"])
 
 if uploaded_file:
-    # Initialisiere Fortschrittsbalken
     progress_bar = st.progress(0)
     progress_status = st.empty()
-    
-    # Lade die Excel-Datei
+
     progress_status.text("Lade Excel-Datei...")
     wb = load_workbook(uploaded_file, data_only=True)
     sheet = wb["Druck Fahrer"]
@@ -220,50 +212,41 @@ if uploaded_file:
     progress_status.text("Excel-Daten geladen.")
     progress_bar.progress(30)
 
-    # Erstelle 6 Zeilen für die Mitarbeiter oberhalb von "Adler"
+    # 5 Zeilen für manuelle Einträge (Richter entfernt)
     new_data = pd.DataFrame([{
-        "Nachname": "Carstensen", "Vorname": "Martin", "Sonntag": "", "Montag": "", "Dienstag": "", 
+        "Nachname": "Carstensen", "Vorname": "Martin", "Sonntag": "", "Montag": "", "Dienstag": "",
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
     }, {
-        "Nachname": "Richter", "Vorname": "Clemens", "Sonntag": "", "Montag": "", "Dienstag": "", 
+        "Nachname": "Lau", "Vorname": "Eike", "Sonntag": "", "Montag": "", "Dienstag": "",
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
     }, {
-        "Nachname": "Lau", "Vorname": "Eike", "Sonntag": "", "Montag": "", "Dienstag": "", 
+        "Nachname": "Pham Manh", "Vorname": "Chris", "Sonntag": "", "Montag": "", "Dienstag": "",
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
     }, {
-        "Nachname": "Pham Manh", "Vorname": "Chris", "Sonntag": "", "Montag": "", "Dienstag": "", 
+        "Nachname": "Ohlenroth", "Vorname": "Nadja", "Sonntag": "", "Montag": "", "Dienstag": "",
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
     }, {
-        "Nachname": "Ohlenroth", "Vorname": "Nadja", "Sonntag": "", "Montag": "", "Dienstag": "", 
-        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
-    }, {
-        "Nachname": "Schulz", "Vorname": "Julian", "Sonntag": "", "Montag": "", "Dienstag": "", 
+        "Nachname": "Schulz", "Vorname": "Julian", "Sonntag": "", "Montag": "", "Dienstag": "",
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
     }])
 
-    # Extrahiere die relevanten Daten
     progress_status.text("Extrahiere Daten...")
     extracted_data_1 = extract_work_data_for_range(data, "adler", "steckel")
     progress_bar.progress(60)
 
-    # Füge alle Daten zusammen
     extracted_data = pd.concat([new_data, extracted_data_1], ignore_index=True)
 
-    # Kalenderwoche berechnen
     dates = create_header_with_dates(data)
     first_date = pd.to_datetime(dates[0], format='%d.%m.%Y')
     calendar_week = first_date.isocalendar()[1]
 
-    # Flache Spaltenüberschriften erstellen
     columns = ["Nachname", "Vorname"] + [f"{weekday} ({date})" for weekday, date in zip(
         ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"], dates
     )]
     extracted_data.columns = columns
 
-    # Excel-Dateiname mit Kalenderwoche erstellen
     excel_filename = f"Fuhrpark_Meldung_KW: {calendar_week + 1}.xlsx"
 
-    # Exportiere die Daten als Excel-Datei
     progress_status.text("Exportiere Excel-Datei...")
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
@@ -272,12 +255,10 @@ if uploaded_file:
         style_excel(ws, calendar_week, len(new_data), len(extracted_data))
     excel_data = output.getvalue()
 
-    # Fortschrittsanzeige abschließen
     progress_status.text("Fertig!")
     st.success("Verarbeitung abgeschlossen.")
     progress_bar.progress(100)
 
-    # Download-Option
     st.download_button(
         label="Download als Excel",
         data=excel_data,
