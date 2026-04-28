@@ -89,7 +89,7 @@ def style_excel(ws, calendar_week, num_new_rows, total_rows):
     new_row_fill_dark = PatternFill(start_color="E74C3C", end_color="E74C3C", fill_type="solid")
     new_row_fill_light = PatternFill(start_color="F1948A", end_color="F1948A", fill_type="solid")
 
-    # Grün-Töne für letzte Zeilen
+    # Grün-Töne für feste Abschlussnamen
     last_row_fill_dark = PatternFill(start_color="27AE60", end_color="27AE60", fill_type="solid")
     last_row_fill_light = PatternFill(start_color="82E0AA", end_color="82E0AA", fill_type="solid")
 
@@ -160,17 +160,32 @@ def style_excel(ws, calendar_week, num_new_rows, total_rows):
                 cell.font = Font(size=10, color="2C3E50", bold=True)
             cell.border = thin_border
 
-    # Formatierung für die letzten 7 Zeilen (grün)
-    for row in range(ws.max_row - 6, ws.max_row + 1):
+    # Nur diese Namen grün färben, alle anderen Zeilen bleiben wie vorher formatiert
+    green_names = {
+        ("kleiber", "lutz"),
+        ("dammasch", "bernd"),
+        ("linke", "erich"),
+        ("steckel", "wolfgang"),
+    }
+
+    green_row_counter = 0
+    for row in range(4, ws.max_row + 1):
+        lastname = str(ws.cell(row=row, column=1).value or "").strip().lower()
+        firstname = str(ws.cell(row=row, column=2).value or "").strip().lower()
+
+        if (lastname, firstname) not in green_names:
+            continue
+
         for cell in ws[row]:
-            relative_row = row - (ws.max_row - 6)
-            if relative_row % 2 == 0:
+            if green_row_counter % 2 == 0:
                 cell.fill = last_row_fill_dark
                 cell.font = Font(size=10, color="FFFFFF", bold=True)
             else:
                 cell.fill = last_row_fill_light
                 cell.font = Font(size=10, color="2C3E50", bold=True)
             cell.border = thin_border
+
+        green_row_counter += 1
 
     # Spaltenbreite anpassen
     column_min_widths = {
