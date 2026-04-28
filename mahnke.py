@@ -212,7 +212,7 @@ if uploaded_file:
     progress_status.text("Excel-Daten geladen.")
     progress_bar.progress(30)
 
-    # 5 Zeilen für manuelle Einträge (Richter entfernt)
+    # 7 Zeilen für manuelle Einträge (Richter entfernt)
     new_data = pd.DataFrame([{
         "Nachname": "Carstensen", "Vorname": "Martin", "Sonntag": "", "Montag": "", "Dienstag": "",
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
@@ -227,6 +227,12 @@ if uploaded_file:
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
     }, {
         "Nachname": "Schulz", "Vorname": "Julian", "Sonntag": "", "Montag": "", "Dienstag": "",
+        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
+    }, {
+        "Nachname": "Aniol", "Vorname": "Przemyslaw", "Sonntag": "", "Montag": "", "Dienstag": "",
+        "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
+    }, {
+        "Nachname": "Packmohr", "Vorname": "Gina", "Sonntag": "", "Montag": "", "Dienstag": "",
         "Mittwoch": "", "Donnerstag": "", "Freitag": "", "Samstag": ""
     }])
 
